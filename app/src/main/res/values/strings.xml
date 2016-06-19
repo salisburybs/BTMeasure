@@ -1,0 +1,69 @@
+<resources>
+    <string name="dev_email">bryan@bryansalisbury.com</string>
+    <string name="app_name">Measure and Control</string>
+
+    <string name="title_activity_main">BT Measure</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_measure">Measure</string>
+    <string name="action_control">Control</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <string name="title_activity_measure">Measure</string>
+
+    <string name="error_bluetooth_not_supported">Bluetooth Not Supported</string>
+
+    <!-- Bluno Library Strings -->
+    <string name="unknown_device">Unknown device</string>
+
+    <!-- Strings related to Settings -->
+
+    <!-- Example General settings -->
+    <string name="pref_header_general">General</string>
+
+    <string name="pref_title_social_recommendations">Enable social recommendations</string>
+    <string name="pref_description_social_recommendations">Recommendations for people to contact
+        based on your message history
+    </string>
+
+    <string name="pref_title_display_name">Display name</string>
+    <string name="pref_default_display_name">John Smith</string>
+
+    <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
+    <string-array name="pref_example_list_titles">
+        <item>Always</item>
+        <item>When possible</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_example_list_values">
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>
+
+
+    <!-- Settings for Device Profile -->
+    <string name="pref_header_devices">Bluetooth</string>
+
+    <string name="pref_title_devices">Device Type</string>
+    <string name="pref_description_devices">Select default device type</string>
+    <string-array name="pref_device_list_titles">
+        <item>Bluno BLE</item>
+    </string-array>
+    <string-array name="pref_device_list_values">
+        <item>bluno</item>
+    </string-array>
+
+    <string name="pref_title_mac">Device</string>
+    <string name="pref_description_mac">Please choose the default bluetooth device</string>
+    <string-array name="pref_mac_list_titles">
+        <item></item>
+    </string-array>
+    <string-array name="pref_mac_list_values">
+        <item></item>
+    </string-array>
+</resources>
