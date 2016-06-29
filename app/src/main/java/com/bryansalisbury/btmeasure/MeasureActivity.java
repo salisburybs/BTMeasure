@@ -18,6 +18,7 @@ import android.widget.Toast;
 import com.bryansalisbury.btmeasure.bluno.Bluno;
 import com.bryansalisbury.btmeasure.bluno.RingBuffer;
 import com.bryansalisbury.btmeasure.models.TestSequence;
+import com.squareup.leakcanary.LeakCanary;
 
 import java.io.File;
 import java.io.FileNotFoundException;
