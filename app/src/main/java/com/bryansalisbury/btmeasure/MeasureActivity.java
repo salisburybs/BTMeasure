@@ -1,5 +1,8 @@
 package com.bryansalisbury.btmeasure;
 
+import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -74,9 +77,6 @@ public class MeasureActivity extends AppCompatActivity {
 
     private executionState mExecState = executionState.isNull;
 
-    private static final UUID MY_UUID =
-            UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-
     // Data layer variables
     TestSequence mTestSequence;
 
@@ -138,13 +138,8 @@ public class MeasureActivity extends AppCompatActivity {
     private void buttonBeginClick(){
         // Create database test sequence
         mTestSequence = new TestSequence();
-
-        if (buttonBegin.getText() == "Stop") {
-            buttonBegin.setText("Begin");
-            // write strings to csv file here
-            writeSamplesToFile();
-            return;
-        }
+        mTestSequence.startTime = System.nanoTime();
+        mTestSequence.testName = "New Collection";
 
         cmdString = "MP";
         startTime = 0;
@@ -183,22 +178,9 @@ public class MeasureActivity extends AppCompatActivity {
             return;
         }
 
-        // Fail on no connection to Bluno
-        // FIXME: 5/15/2016 check for BT connection
-                /*
-                if (!mConnected) {
-                    Toast toast = Toast.makeText(
-                            getApplicationContext(),
-                            "Bluetooth Connection not established",
-                            Toast.LENGTH_SHORT);
-                    toast.show();
-                    return;
-                }*/
-
         cmdString += "N2000:";
 
         Log.i("Bluno cmdString", cmdString);
-        //TODO serialSend(cmdString);
         mExecState = executionState.isSending;
         buttonBegin.setText("Stop");
         bluno.connect("D0:39:72:C5:38:6F");
@@ -299,33 +281,18 @@ public class MeasureActivity extends AppCompatActivity {
                 }
             }
         }
-
-        if (samples.size() >= 1000) {
-            endTime = System.nanoTime();
-            //TODO send stop command
-            mExecState = executionState.isNull;
-            buttonBegin.setText("Begin Capture");
-            writeSamplesToFile();
-            samples.clear();
-        }
     }
 
+    @Override
+    protected void onPause(){
+        bluno.pause();
+        super.onPause();
+    }
 
-    //@Override
-    public void onSerialReceived(String theString) {
-        for (String str : theString.split(" ")) {
-            if (inputRingBuffer.isFull()) {
-                processBuffer();
-            }
-            str = str.trim();
-            if (str.length() == 2){
-                try{
-                    inputRingBuffer.push(Short.parseShort(str, 16));
-                }catch(Exception e){
-                    Log.e("Bluno", "exception", e);
-                }
-            }
-        }
+    @Override
+    protected void onResume(){
+        bluno.resume();
+        super.onResume();
     }
 
 }

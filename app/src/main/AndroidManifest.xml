@@ -1,21 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.bryansalisbury.btmeasure">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.bryansalisbury.btmeasure">
+
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
+        android:name="com.orm.SugarApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
-        android:name="com.orm.SugarApp">
-
-        <meta-data android:name="DATABASE" android:value="database.db" />
-        <meta-data android:name="VERSION" android:value="1" />
-        <meta-data android:name="QUERY_LOG" android:value="true" />
-        <meta-data android:name="DOMAIN_PACKAGE_NAME" android:value="com.bryansalisbury.btmeasure.models" />
+        android:theme="@style/AppTheme">
+        <meta-data
+            android:name="DATABASE"
+            android:value="database.db" />
+        <meta-data
+            android:name="VERSION"
+            android:value="1" />
+        <meta-data
+            android:name="QUERY_LOG"
+            android:value="true" />
+        <meta-data
+            android:name="DOMAIN_PACKAGE_NAME"
+            android:value="com.bryansalisbury.btmeasure.models" />
 
         <activity
             android:name=".MainActivity"
@@ -27,13 +36,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <service
             android:name=".bluno.BluetoothLeService"
             android:enabled="true" />
+
         <activity
             android:name=".MeasureActivity"
             android:label="@string/title_activity_measure" />
 
+        <receiver
+            android:name=".SampleReceiver"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="com.bryansalisbury.sample.RECEIVE" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

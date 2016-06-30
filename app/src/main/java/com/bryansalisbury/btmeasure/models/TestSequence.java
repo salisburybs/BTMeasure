@@ -5,18 +5,19 @@ import com.orm.SugarRecord;
  * Created by salis_000 on 5/31/2016.
  */
 public class TestSequence extends SugarRecord{
-    String testName;
-    long startTime;
+    public String testName;
+    public long startTime;
 
-    int sampleDelay;
+    public int sampleDelay;
+    public int compressed = 1;
 
     // Input Labels
-    String labelA0;
-    String labelA1;
-    String labelA2;
-    String labelA3;
-    String labelA4;
-    String labelA5;
+    public String labelA0;
+    public String labelA1;
+    public String labelA2;
+    public String labelA3;
+    public String labelA4;
+    public String labelA5;
 
     public TestSequence(){
     }

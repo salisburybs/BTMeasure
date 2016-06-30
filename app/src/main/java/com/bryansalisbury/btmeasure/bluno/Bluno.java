@@ -212,8 +212,17 @@ public class Bluno {
         mBluetoothLeService.connect(deviceAddress);
     }
 
+    public void pause(){
+        mainContext.unregisterReceiver(mGattUpdateReceiver);
+    }
+
+    public void resume(){
+        mainContext.registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+    }
+
     public void close(){
         mBluetoothLeService.close();
+        mainContext.unregisterReceiver(mGattUpdateReceiver);
     }
 
     public void send(String text) {
