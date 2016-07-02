@@ -1,6 +1,10 @@
 [
     {
-        "merged": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\app\\build\\intermediates\\res\\merged\\debug\\mipmap-mdpi-v4\\ic_launcher.png",
-        "source": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\app\\src\\main\\res\\mipmap-mdpi\\ic_launcher.png"
+        "merged": "/home/bryan/BTMeasure/C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\app\\build\\intermediates\\res\\merged\\debug\\mipmap-mdpi-v4\\ic_launcher.png",
+        "source": "/home/bryan/BTMeasure/C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\app\\src\\main\\res\\mipmap-mdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "/home/bryan/BTMeasure/app/build/intermediates/res/merged/debug/mipmap-mdpi-v4/ic_launcher.png",
+        "source": "/home/bryan/BTMeasure/app/src/main/res/mipmap-mdpi/ic_launcher.png"
     }
 ]

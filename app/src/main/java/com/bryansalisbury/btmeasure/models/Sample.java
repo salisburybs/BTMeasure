@@ -12,13 +12,13 @@ public class Sample extends SugarRecord {
     public Sample(){
     }
 
-    public Sample(String input, int value){
+    public Sample(String input, int value, TestSequence testSequence){
         this.unixTimestamp = System.currentTimeMillis() / 1000L;
         this.input = input;
         this.value = value;
     }
 
-    public Sample(String input, int value, long unixTimestamp){
+    public Sample(String input, int value, long unixTimestamp, TestSequence testSequence){
         this.unixTimestamp = unixTimestamp;
         this.input = input;
         this.value = value;

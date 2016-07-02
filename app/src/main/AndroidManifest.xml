@@ -45,13 +45,6 @@
             android:name=".MeasureActivity"
             android:label="@string/title_activity_measure" />
 
-        <receiver
-            android:name=".SampleReceiver"
-            android:enabled="true">
-            <intent-filter>
-                <action android:name="com.bryansalisbury.sample.RECEIVE" />
-            </intent-filter>
-        </receiver>
     </application>
 
 </manifest>

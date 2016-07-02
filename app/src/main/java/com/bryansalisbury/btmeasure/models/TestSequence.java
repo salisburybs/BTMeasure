@@ -6,10 +6,11 @@ import com.orm.SugarRecord;
  */
 public class TestSequence extends SugarRecord{
     public String testName;
-    public long startTime;
+    public long unixTimestamp;
 
     public int sampleDelay;
-    public int compressed = 1;
+    public boolean compressed = true;
+    public int measureMask;
 
     // Input Labels
     public String labelA0;
@@ -19,13 +20,27 @@ public class TestSequence extends SugarRecord{
     public String labelA4;
     public String labelA5;
 
-    public TestSequence(){
+    public String getConfigureString(){
+        String commandString = "MP";
+
+        if(this.compressed){
+            commandString += "C1:";
+        }else{
+            commandString += "C0:";
+        }
+
+        commandString += "D" + this.sampleDelay + ":";
+        commandString += "S" + this.measureMask + ":";
+        return  commandString;
     }
 
-    public TestSequence(String testName, long startTime, int sampleDelay){
+    public TestSequence(){
+        this.unixTimestamp = System.currentTimeMillis() / 1000L;
+    }
+
+    public TestSequence(String testName){
         this.testName = testName;
-        this.startTime = startTime;
-        this.sampleDelay = sampleDelay;
+        this.unixTimestamp = System.currentTimeMillis() / 1000L;
 
         this.labelA0 = "A0";
         this.labelA1 = "A1";

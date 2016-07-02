@@ -1,13 +1,6 @@
 package com.bryansalisbury.btmeasure;
 
-import android.annotation.SuppressLint;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -19,95 +12,36 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bryansalisbury.btmeasure.bluno.Bluno;
-import com.bryansalisbury.btmeasure.bluno.RingBuffer;
 import com.bryansalisbury.btmeasure.models.TestSequence;
-import com.squareup.leakcanary.LeakCanary;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.UUID;
 
 public class MeasureActivity extends AppCompatActivity {
-    private Bluno bluno = null;
-
-    private int sampleDelay;
-    private int measureMask = 0;
-    private boolean Compressed = false;
-    private SeekBar seekSampleRate;
-    private Switch switchA0;
-    private Switch switchA1;
-    private Switch switchA2;
-    private Switch switchA3;
-    private Switch switchA4;
-    private Switch switchA5;
-    private TextView textSampleRate;
-    private Button buttonBegin;
-    private Button buttonScan;
-    private CheckBox checkCompress;
-
-    // Serial Communication Variables
-    private String cmdString;
-    private RingBuffer<Short> inputRingBuffer = new RingBuffer<Short>(64);
-
-    // Samples Decoded
-    private ArrayList<Integer> samples = new ArrayList<Integer>();
-
-    // Sample Statistics
-    private int errorCount = 0;
-    private long startTime = 0;
-    private long endTime = 0;
+    private Bluno bluno;
 
     // Arduino Control Variables
+    // TODO move to bluno.java as this is platform specific restriction
     private static final int sampleRateMax = 4000;
-    private int sampleRate;
-
-    @Override
-    public void onStart() {
-        super.onStart();
-    }
-
-    // State Variables
-    private enum executionState {
-        isNull, isSending
-    }
-
-    private executionState mExecState = executionState.isNull;
-
-    // Data layer variables
-    TestSequence mTestSequence;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Create bluno now to have bt service ready when needed.
+        // TODO use handler to create callback and connect to service on button click
         bluno = new Bluno(this);
 
         setContentView(R.layout.activity_measure);
-        seekSampleRate = (SeekBar) findViewById(R.id.seekBar);
-        switchA0 = (Switch) findViewById(R.id.switchA0);
-        switchA1 = (Switch) findViewById(R.id.switchA1);
-        switchA2 = (Switch) findViewById(R.id.switchA2);
-        switchA3 = (Switch) findViewById(R.id.switchA3);
-        switchA4 = (Switch) findViewById(R.id.switchA4);
-        switchA5 = (Switch) findViewById(R.id.switchA5);
-        textSampleRate = (TextView) findViewById(R.id.textSampleRate);
-        buttonBegin = (Button) findViewById(R.id.buttonBegin);
-        buttonScan = (Button) findViewById(R.id.btnConnect);
-        checkCompress = (CheckBox) findViewById(R.id.checkCompression);
-
+        final Button buttonBegin = (Button) findViewById(R.id.buttonBegin);
+        final SeekBar seekSampleRate = (SeekBar) findViewById(R.id.seekBar);
+        final TextView textSampleRate = (TextView) findViewById(R.id.textSampleRate);
 
         seekSampleRate.setMax(sampleRateMax - 1);
-        sampleRate = seekSampleRate.getProgress() + 1;
-
-        textSampleRate.setText("Sample Rate: " + sampleRate + " (hz)");
+        textSampleRate.setText("Sample Rate: " + seekSampleRate.getProgress() + 1 + " (hz)");
 
         seekSampleRate.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                                                       @Override
                                                       public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                                                          sampleRate = progress + 1;
+                                                          int sampleRate = progress + 1;
                                                           textSampleRate.setText("Sample Rate: " + sampleRate + " (hz)");
                                                       }
 
@@ -135,41 +69,40 @@ public class MeasureActivity extends AppCompatActivity {
         });
     }
 
+    private int getSampleDelay(){
+        final SeekBar seekSampleRate = (SeekBar) findViewById(R.id.seekBar);
+        // return delay in microseconds
+        return (int) ((1.0 / (float) seekSampleRate.getProgress() + 1) * 1000000);
+    }
+
     private void buttonBeginClick(){
+        // UI Elements
+        Switch switchA0 = (Switch) findViewById(R.id.switchA0);
+        Switch switchA1 = (Switch) findViewById(R.id.switchA1);
+        Switch switchA2 = (Switch) findViewById(R.id.switchA2);
+        Switch switchA3 = (Switch) findViewById(R.id.switchA3);
+        Switch switchA4 = (Switch) findViewById(R.id.switchA4);
+        Switch switchA5 = (Switch) findViewById(R.id.switchA5);
+        Button buttonBegin = (Button) findViewById(R.id.buttonBegin);
+        CheckBox checkCompress = (CheckBox) findViewById(R.id.checkCompression);
+
         // Create database test sequence
-        mTestSequence = new TestSequence();
-        mTestSequence.startTime = System.nanoTime();
-        mTestSequence.testName = "New Collection";
+        TestSequence mTestSequence = new TestSequence("New Collection");
+        mTestSequence.compressed = checkCompress.isChecked();
 
-        cmdString = "MP";
-        startTime = 0;
-        endTime = 0;
-
-        if (checkCompress.isChecked()) {
-            cmdString += "C1:";
-            Compressed = true;
-        } else {
-            cmdString += "C0:";
-            Compressed = false;
-        }
-
-        // Sample delay calculated from sampleRate(hz)
-        // value expected to be in microseconds
-        sampleDelay = (int) ((1.0 / (float) sampleRate) * 1000000);
-        cmdString += "D" + sampleDelay + ":";
+        // Sample delay calculated from sampleRate(hz) value expected to be in microseconds
+        mTestSequence.sampleDelay = getSampleDelay();
 
         // measureMask tells the Ardiuno which values to read and send over serial.
-        measureMask = (switchA0.isChecked() ? 1 : 0);
-        measureMask += (switchA1.isChecked() ? 1 : 0) << 1;
-        measureMask += (switchA2.isChecked() ? 1 : 0) << 2;
-        measureMask += (switchA3.isChecked() ? 1 : 0) << 3;
-        measureMask += (switchA4.isChecked() ? 1 : 0) << 4;
-        measureMask += (switchA5.isChecked() ? 1 : 0) << 5;
+        mTestSequence.measureMask = (switchA0.isChecked() ? 1 : 0);
+        mTestSequence.measureMask += (switchA1.isChecked() ? 1 : 0) << 1;
+        mTestSequence.measureMask += (switchA2.isChecked() ? 1 : 0) << 2;
+        mTestSequence.measureMask += (switchA3.isChecked() ? 1 : 0) << 3;
+        mTestSequence.measureMask += (switchA4.isChecked() ? 1 : 0) << 4;
+        mTestSequence.measureMask += (switchA5.isChecked() ? 1 : 0) << 5;
 
         // Fail on no selection indicated
-        if (measureMask > 0) {
-            cmdString += "S" + measureMask + ":";
-        } else {
+        if (mTestSequence.measureMask <= 0) {
             Toast toast = Toast.makeText(
                     getApplicationContext(),
                     "At least one (1) input must be selected!",
@@ -178,21 +111,14 @@ public class MeasureActivity extends AppCompatActivity {
             return;
         }
 
-        cmdString += "N2000:";
-
-        Log.i("Bluno cmdString", cmdString);
-        mExecState = executionState.isSending;
+        Log.i("Bluno cmdString", mTestSequence.getConfigureString());
+        mTestSequence.save();
         buttonBegin.setText("Stop");
         bluno.connect("D0:39:72:C5:38:6F");
 
     }
 
-    // copied from developer.android.com
-    public boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        return (Environment.MEDIA_MOUNTED.equals(state));
-    }
-
+    /*
     public void writeSamplesToFile() {
         if (isExternalStorageWritable()) {
             File root = Environment.getExternalStorageDirectory();
@@ -282,6 +208,7 @@ public class MeasureActivity extends AppCompatActivity {
             }
         }
     }
+    */
 
     @Override
     protected void onPause(){
