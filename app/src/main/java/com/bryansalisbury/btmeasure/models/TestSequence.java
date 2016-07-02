@@ -1,9 +1,6 @@
 package com.bryansalisbury.btmeasure.models;
 import com.orm.SugarRecord;
 
-/**
- * Created by salis_000 on 5/31/2016.
- */
 public class TestSequence extends SugarRecord{
     public String testName;
     public long unixTimestamp;
