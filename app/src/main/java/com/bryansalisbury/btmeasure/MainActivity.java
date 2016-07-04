@@ -14,6 +14,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+
+import com.bryansalisbury.btmeasure.models.TestSequence;
+import com.orm.query.Select;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -33,6 +41,11 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        ArrayList<TestSequence> Tests = (ArrayList<TestSequence>) TestSequence.listAll(TestSequence.class);
+        TestSequenceAdapter itemsAdapter =  new TestSequenceAdapter(this, Tests);
+        ListView lvResults = (ListView) findViewById(R.id.listViewResults);
+        lvResults.setAdapter(itemsAdapter);
     }
 
     @Override

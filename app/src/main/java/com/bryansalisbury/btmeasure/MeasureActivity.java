@@ -14,8 +14,6 @@ import android.widget.Toast;
 import com.bryansalisbury.btmeasure.bluno.Bluno;
 import com.bryansalisbury.btmeasure.models.TestSequence;
 
-import java.util.ArrayList;
-
 public class MeasureActivity extends AppCompatActivity {
     private Bluno bluno;
 
