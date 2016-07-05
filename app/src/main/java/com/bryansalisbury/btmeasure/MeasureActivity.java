@@ -22,8 +22,14 @@ import com.bryansalisbury.btmeasure.models.TestSequence;
 
 public class MeasureActivity extends AppCompatActivity {
     private Bluno bluno;
+
+    private static final String TAG = "MeasureActivity";
+
     public static final String ACTION_MESSAGE_AVAILABLE = "com.bryansalisbury.message.AVAILABLE";
     public static final String EXTRA_VALUE = "com.bryansalisbury.message.EXTRA_VALUE";
+
+    private enum RemoteState {NULL, TEST, MAIN, MEASURE, CONTROL, TOGGLE_LED, ECHO};
+    private RemoteState mState = RemoteState.NULL;
 
     // Arduino Control Variables
     // TODO move to bluno.java as this is platform specific restriction
@@ -119,6 +125,8 @@ public class MeasureActivity extends AppCompatActivity {
 
         Log.i("Bluno cmdString", mTestSequence.getConfigureString());
         mTestSequence.save();
+
+        // TODO improve handling of test start
         buttonBegin.setText("Stop");
         bluno.connect("D0:39:72:C5:38:6F");
 
@@ -128,7 +136,11 @@ public class MeasureActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             if(ACTION_MESSAGE_AVAILABLE.equals(intent.getAction())){
-                //TODO parse the different messages from BT service
+                byte[] data = intent.getByteArrayExtra(EXTRA_VALUE);
+                if(data != null && data.length > 0) {
+                    //TODO handle all message from BT service
+                    Log.v(TAG, new String(data));
+                }
             }
         }
     };
