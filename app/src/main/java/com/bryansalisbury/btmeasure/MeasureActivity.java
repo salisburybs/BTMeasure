@@ -1,5 +1,10 @@
 package com.bryansalisbury.btmeasure;
 
+import android.app.Application;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -11,11 +16,14 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bryansalisbury.btmeasure.bluno.BluetoothLeService;
 import com.bryansalisbury.btmeasure.bluno.Bluno;
 import com.bryansalisbury.btmeasure.models.TestSequence;
 
 public class MeasureActivity extends AppCompatActivity {
     private Bluno bluno;
+    public static final String ACTION_MESSAGE_AVAILABLE = "com.bryansalisbury.message.AVAILABLE";
+    public static final String EXTRA_VALUE = "com.bryansalisbury.message.EXTRA_VALUE";
 
     // Arduino Control Variables
     // TODO move to bluno.java as this is platform specific restriction
@@ -116,6 +124,21 @@ public class MeasureActivity extends AppCompatActivity {
 
     }
 
+    private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(ACTION_MESSAGE_AVAILABLE.equals(intent.getAction())){
+                //TODO parse the different messages from BT service
+            }
+        }
+    };
+
+
+    private static IntentFilter makeIntentFilter() {
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ACTION_MESSAGE_AVAILABLE);
+        return intentFilter;
+    }
     /*
     public void writeSamplesToFile() {
         if (isExternalStorageWritable()) {
@@ -211,12 +234,14 @@ public class MeasureActivity extends AppCompatActivity {
     @Override
     protected void onPause(){
         bluno.pause();
+        getApplicationContext().unregisterReceiver(mBroadcastReceiver);
         super.onPause();
     }
 
     @Override
     protected void onResume(){
         bluno.resume();
+        getApplicationContext().registerReceiver(mBroadcastReceiver, makeIntentFilter());
         super.onResume();
     }
 

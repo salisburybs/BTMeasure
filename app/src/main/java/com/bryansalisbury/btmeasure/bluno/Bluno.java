@@ -14,6 +14,8 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.bryansalisbury.btmeasure.MeasureActivity;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +36,8 @@ public class Bluno {
             mCommandCharacteristic;
     private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics = new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
     private BluetoothLeService mBluetoothLeService;
+
+    private ArrayList<Byte> mRawMessageBuffer = new ArrayList<>(); // used to temporarily store partially transmitted message
 
     private Context mainContext;
 
@@ -131,7 +135,16 @@ public class Bluno {
                     }
                     if(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA_RAW) != null) {
                         //onSerialReceivedRaw(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA_RAW));
-                        Log.d(TAG, new String(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA_RAW)));
+                        for(Byte b : intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA_RAW)){
+                            mRawMessageBuffer.add(b);
+                            if(b == 10){
+                                Intent messageIntent = new Intent(MeasureActivity.ACTION_MESSAGE_AVAILABLE);
+                                messageIntent.putExtra(MeasureActivity.EXTRA_VALUE, mRawMessageBuffer);
+                                mainContext.sendBroadcast(messageIntent);
+                                mRawMessageBuffer.clear();
+                            }
+                        }
+
                     }
                 } else if (mSCharacteristic == mModelNumberCharacteristic) {
                     //if (intent.getStringExtra(BluetoothLeService.EXTRA_DATA).toUpperCase().startsWith("DF BLUNO")) {

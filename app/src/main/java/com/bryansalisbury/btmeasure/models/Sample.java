@@ -3,7 +3,7 @@ package com.bryansalisbury.btmeasure.models;
 import com.orm.SugarRecord;
 
 public class Sample extends SugarRecord {
-    long unixTimestamp;
+    long timestamp;
     String input;
     int value;
 
@@ -13,13 +13,14 @@ public class Sample extends SugarRecord {
     }
 
     public Sample(String input, int value, TestSequence testSequence){
-        this.unixTimestamp = System.currentTimeMillis() / 1000L;
+        this.timestamp = System.nanoTime();
+        this.testSequence = testSequence;
         this.input = input;
         this.value = value;
     }
 
-    public Sample(String input, int value, long unixTimestamp, TestSequence testSequence){
-        this.unixTimestamp = unixTimestamp;
+    public Sample(String input, int value, long timestamp, TestSequence testSequence){
+        this.timestamp = timestamp;
         this.input = input;
         this.value = value;
     }
