@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ListPreference
+        android:title="@string/pref_title_mac"
+        android:entries="@array/pref_mac_list_titles"
+        android:entryValues="@array/pref_mac_list_values"
+        android:key="device_mac"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null"
+        android:defaultValue="@string/pref_description_mac"
+        android:enabled="false"/>
+
+    <ListPreference
+        android:defaultValue="bluno"
+        android:entries="@array/pref_device_list_titles"
+        android:entryValues="@array/pref_device_list_values"
+        android:key="device_type"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null"
+        android:title="@string/pref_title_devices"
+        android:summary="@string/pref_description_devices" />
+
+    <SwitchPreference
+        android:title="Compression"
+        android:defaultValue="false"
+        android:summaryOn="Samples are being compressed to increase bandwidth."
+        android:summaryOff="Samples are not being compressed to increase bandwidth."/>
+
+</PreferenceScreen>
