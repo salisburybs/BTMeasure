@@ -8,7 +8,19 @@
         "source": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\app\\src\\main\\res\\xml\\pref_general.xml"
     },
     {
+        "merged": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\Android\\app\\build\\intermediates\\res\\merged\\debug\\xml\\pref_headers.xml",
+        "source": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\Android\\app\\src\\main\\res\\xml\\pref_headers.xml"
+    },
+    {
+        "merged": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\Android\\app\\build\\intermediates\\res\\merged\\debug\\xml\\pref_devices.xml",
+        "source": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\Android\\app\\src\\main\\res\\xml\\pref_devices.xml"
+    },
+    {
         "merged": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\app\\build\\intermediates\\res\\merged\\debug\\xml\\pref_devices.xml",
         "source": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\app\\src\\main\\res\\xml\\pref_devices.xml"
+    },
+    {
+        "merged": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\Android\\app\\build\\intermediates\\res\\merged\\debug\\xml\\pref_general.xml",
+        "source": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\Android\\app\\src\\main\\res\\xml\\pref_general.xml"
     }
 ]

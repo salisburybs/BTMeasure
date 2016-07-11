@@ -136,12 +136,13 @@ public class Bluno {
                     if(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA_RAW) != null) {
                         //onSerialReceivedRaw(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA_RAW));
                         for(Byte b : intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA_RAW)){
-                            mRawMessageBuffer.add(b);
                             if(b == 10){
                                 Intent messageIntent = new Intent(MeasureActivity.ACTION_MESSAGE_AVAILABLE);
                                 messageIntent.putExtra(MeasureActivity.EXTRA_VALUE, mRawMessageBuffer);
                                 mainContext.sendBroadcast(messageIntent);
                                 mRawMessageBuffer.clear();
+                            }else{
+                                mRawMessageBuffer.add(b);
                             }
                         }
 

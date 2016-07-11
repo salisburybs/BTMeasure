@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import com.bryansalisbury.btmeasure.bluno.BluetoothLeService;
 import com.bryansalisbury.btmeasure.bluno.Bluno;
+import com.bryansalisbury.btmeasure.models.Sample;
 import com.bryansalisbury.btmeasure.models.TestSequence;
 
 public class MeasureActivity extends AppCompatActivity {
@@ -30,6 +31,7 @@ public class MeasureActivity extends AppCompatActivity {
 
     private enum RemoteState {NULL, TEST, MAIN, MEASURE, CONTROL, TOGGLE_LED, ECHO};
     private RemoteState mState = RemoteState.NULL;
+    private TestSequence mTestSequence;
 
     // Arduino Control Variables
     // TODO move to bluno.java as this is platform specific restriction
@@ -99,7 +101,7 @@ public class MeasureActivity extends AppCompatActivity {
         CheckBox checkCompress = (CheckBox) findViewById(R.id.checkCompression);
 
         // Create database test sequence
-        TestSequence mTestSequence = new TestSequence("New Collection");
+        mTestSequence = new TestSequence("New Collection");
         mTestSequence.compressed = checkCompress.isChecked();
 
         // Sample delay calculated from sampleRate(hz) value expected to be in microseconds
@@ -135,34 +137,62 @@ public class MeasureActivity extends AppCompatActivity {
     private RemoteState StateLookup(int code){
         switch (code){
             case 0:
+                Log.i(TAG, "RemoteState.NULL");
                 return RemoteState.NULL;
             case 1:
+                Log.i(TAG, "RemoteState.TEST");
                 return RemoteState.TEST;
             case 2:
+                Log.i(TAG, "RemoteState.MAIN");
                 return RemoteState.MAIN;
             case 3:
+                Log.i(TAG, "RemoteState.MEASURE");
                 return RemoteState.MEASURE;
             case 4:
+                Log.i(TAG, "RemoteState.CONTROL");
                 return RemoteState.CONTROL;
             case 5:
+                Log.i(TAG, "RemoteState.TOGGLE_LED");
                 return RemoteState.TOGGLE_LED;
             case 6:
+                Log.i(TAG, "RemoteState.ECHO");
                 return RemoteState.ECHO;
             default:
                 return RemoteState.NULL;
         }
     }
 
-    private void MessageHandler(String message) {
-        if(mState.equals(RemoteState.MEASURE)){
+    // TODO return sample object from ValueUnpacker to handle multi input record mode
+    private int ValueUnpacker(byte[] data){
+        if(data.length == 2){
+            return ((data[0] & 0x00FF) | ((data[1] & 0x00FF) << 2));
+        }
+        return -1;
+    }
 
-        }else{
-            if(message.startsWith("STATE")){
-                String[] parts = message.split("=");
-                int state = Integer.parseInt(parts[parts.length - 1]);
-                mState = StateLookup(state);
-            }else if(message.startsWith("ERROR")){
-                Log.e(TAG, message);
+    private void MessageHandler(byte[] data, String message) {
+        if(message.startsWith("STATE")){
+            String[] parts = message.split("=");
+            int state = Integer.parseInt(parts[parts.length - 1]);
+            mState = StateLookup(state);
+            return; // Return on state change. done processing this message
+        }else if(message.startsWith("ERROR")){
+            Log.e(TAG, message);
+            return; // not data to save from this message
+        }else if(message.startsWith("INFO")){
+            Log.v(TAG, message);
+            return; // diagnostic message
+        }
+
+        if(mState.equals(RemoteState.MEASURE)){
+            if(mTestSequence.compressed){
+                if(data.length == 2){
+                    Sample mSample = new Sample("A0", ValueUnpacker(data), mTestSequence);
+                    mSample.save();
+                }
+            }else{
+                Sample mSample = new Sample("A0", Integer.parseInt(message), mTestSequence);
+                mSample.save();
             }
         }
     }
@@ -173,8 +203,7 @@ public class MeasureActivity extends AppCompatActivity {
             if(ACTION_MESSAGE_AVAILABLE.equals(intent.getAction())){
                 byte[] data = intent.getByteArrayExtra(EXTRA_VALUE);
                 if(data != null && data.length > 0) {
-                    //TODO handle all message from BT service
-                    Log.v(TAG, new String(data));
+                    MessageHandler(data, new String(data));
                 }
             }
         }

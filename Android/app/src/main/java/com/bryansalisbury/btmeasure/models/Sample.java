@@ -3,11 +3,11 @@ package com.bryansalisbury.btmeasure.models;
 import com.orm.SugarRecord;
 
 public class Sample extends SugarRecord {
-    long timestamp;
-    String input;
-    int value;
+    public long timestamp;
+    public String input;
+    public int value;
 
-    TestSequence testSequence;
+    public TestSequence testSequence;
 
     public Sample(){
     }

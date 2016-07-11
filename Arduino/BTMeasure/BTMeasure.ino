@@ -80,6 +80,7 @@ byte getNextState(byte state) {
           bufferInput[index] = '\0';
 
           if (debug) {
+            Serial.print("INFO ");
             Serial.print(bufferInput);
             Serial.write('\n');
           }
@@ -205,7 +206,7 @@ void loop() {
             Serial.write('\n');
           }
           if (debug) {
-            Serial.print("sampleCount=");
+            Serial.print("INFO sampleCount=");
             Serial.print(sampleCount);
             Serial.write('\n');
           }
@@ -229,7 +230,7 @@ void loop() {
               // set global compression variable
               compressOutput = atoi(cmd);
               if (debug) {
-                Serial.print("compression=");
+                Serial.print("INFO compression=");
                 Serial.print(compressOutput);
                 Serial.write('\n');
               }
@@ -238,7 +239,7 @@ void loop() {
               cmd++;
               // set delay value
               sampleDelay = atoi(cmd);
-              Serial.print("sampleDelay=");
+              Serial.print("INFO sampleDelay=");
               Serial.print(sampleDelay);
               Serial.write('\n');
               break;
@@ -246,7 +247,7 @@ void loop() {
               cmd++;
               // set mask for outputs
               measureMask = atoi(cmd);
-              Serial.print("measureMask=");
+              Serial.print("INFO measureMask=");
               Serial.print(measureMask);
               Serial.write('\n');
               break;
@@ -254,7 +255,7 @@ void loop() {
               cmd++;
               // set mask for outputs
               sampleMaxCount = atoi(cmd);
-              Serial.print("sampleMaxCount=");
+              Serial.print("INFO sampleMaxCount=");
               Serial.print(sampleMaxCount);
               Serial.write('\n');
               break;
@@ -325,6 +326,7 @@ void loop() {
       if ((markTemp - markToggleLED) > sampleDelay) {
         markToggleLED = markTemp;
         if (debug) {
+          Serial.print("INFO ");
           Serial.print(!digitalRead(13));
           Serial.write('\n');
         }

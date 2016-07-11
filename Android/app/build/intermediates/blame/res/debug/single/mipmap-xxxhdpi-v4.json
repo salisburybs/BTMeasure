@@ -1,5 +1,9 @@
 [
     {
+        "merged": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\Android\\app\\build\\intermediates\\res\\merged\\debug\\mipmap-xxxhdpi-v4\\ic_launcher.png",
+        "source": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\Android\\app\\src\\main\\res\\mipmap-xxxhdpi\\ic_launcher.png"
+    },
+    {
         "merged": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\app\\build\\intermediates\\res\\merged\\debug\\mipmap-xxxhdpi-v4\\ic_launcher.png",
         "source": "C:\\Users\\salis_000\\StudioProjects\\BTMeasure\\app\\src\\main\\res\\mipmap-xxxhdpi\\ic_launcher.png"
     }
