@@ -2,6 +2,7 @@ package com.bryansalisbury.btmeasure.bluno;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
@@ -114,6 +115,13 @@ public class Bluno {
 
     }
 
+    private byte[] getRawMessageData(){
+        byte[] data = new byte[mRawMessageBuffer.size()];
+        for(int i = 0; i < mRawMessageBuffer.size(); i++ ){
+            data[i] = mRawMessageBuffer.get(i);
+        }
+        return data;
+    }
 
     // Handles various events fired by the Service.
     // ACTION_GATT_CONNECTED: connected to a GATT server.
@@ -135,10 +143,10 @@ public class Bluno {
                     }
                     if(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA_RAW) != null) {
                         //onSerialReceivedRaw(intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA_RAW));
-                        for(Byte b : intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA_RAW)){
+                        for(byte b : intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA_RAW)){
                             if(b == 10){
                                 Intent messageIntent = new Intent(MeasureActivity.ACTION_MESSAGE_AVAILABLE);
-                                messageIntent.putExtra(MeasureActivity.EXTRA_VALUE, mRawMessageBuffer);
+                                messageIntent.putExtra(MeasureActivity.EXTRA_VALUE, getRawMessageData());
                                 mainContext.sendBroadcast(messageIntent);
                                 mRawMessageBuffer.clear();
                             }else{
@@ -212,8 +220,7 @@ public class Bluno {
                         BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 ((Activity) mainContext).startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
             }
-        }
-        */
+        }*/
 
         // bind to BT LE service
         Intent gattServiceIntent = new Intent(mainContext, BluetoothLeService.class);

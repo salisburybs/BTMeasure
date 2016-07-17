@@ -130,6 +130,7 @@ public class MeasureActivity extends AppCompatActivity {
 
         // TODO improve handling of test start
         buttonBegin.setText("Stop");
+        getApplicationContext().registerReceiver(mBroadcastReceiver, makeIntentFilter());
         bluno.connect("D0:39:72:C5:38:6F");
 
     }
@@ -180,7 +181,7 @@ public class MeasureActivity extends AppCompatActivity {
             Log.e(TAG, message);
             return; // not data to save from this message
         }else if(message.startsWith("INFO")){
-            Log.v(TAG, message);
+            Log.i(TAG, message);
             return; // diagnostic message
         }
 
@@ -188,10 +189,12 @@ public class MeasureActivity extends AppCompatActivity {
             if(mTestSequence.compressed){
                 if(data.length == 2){
                     Sample mSample = new Sample("A0", ValueUnpacker(data), mTestSequence);
+                    Log.v(TAG, Integer.toString(mSample.value));
                     mSample.save();
                 }
             }else{
                 Sample mSample = new Sample("A0", Integer.parseInt(message), mTestSequence);
+                Log.v(TAG, message);
                 mSample.save();
             }
         }
