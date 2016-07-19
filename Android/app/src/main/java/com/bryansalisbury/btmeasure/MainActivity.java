@@ -14,8 +14,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bryansalisbury.btmeasure.models.TestSequence;
 import com.orm.query.Select;
@@ -44,8 +47,21 @@ public class MainActivity extends AppCompatActivity
 
         ArrayList<TestSequence> Tests = (ArrayList<TestSequence>) TestSequence.listAll(TestSequence.class);
         TestSequenceAdapter itemsAdapter =  new TestSequenceAdapter(this, Tests);
-        ListView lvResults = (ListView) findViewById(R.id.listViewResults);
+        final ListView lvResults = (ListView) findViewById(R.id.listViewResults);
         lvResults.setAdapter(itemsAdapter);
+
+        lvResults.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                TestSequence item = (TestSequence)adapterView.getItemAtPosition(i);
+                Toast.makeText(getBaseContext(),"You selected : " + item.testName +
+                        " ["+ item.getId() +"]", Toast.LENGTH_SHORT).show();
+
+                Intent intent = new Intent(getBaseContext(), ResultsActivity.class);
+                intent.putExtra("TEST_SEQUENCE_ID", item.getId());
+                startActivity(intent);
+            }
+        });
     }
 
     @Override

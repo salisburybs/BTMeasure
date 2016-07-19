@@ -43,9 +43,8 @@
 
         <activity
             android:name=".MeasureActivity"
-            android:label="@string/title_activity_measure">
-        </activity>
-
+            android:label="@string/title_activity_measure"></activity>
+        <activity android:name=".ResultsActivity"></activity>
     </application>
 
 </manifest>

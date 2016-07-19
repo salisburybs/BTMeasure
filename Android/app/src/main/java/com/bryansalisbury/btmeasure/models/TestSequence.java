@@ -1,6 +1,8 @@
 package com.bryansalisbury.btmeasure.models;
 import com.orm.SugarRecord;
 
+import java.util.List;
+
 public class TestSequence extends SugarRecord{
     public String testName;
     public long unixTimestamp;
@@ -45,5 +47,9 @@ public class TestSequence extends SugarRecord{
         this.labelA3 = "A3";
         this.labelA4 = "A4";
         this.labelA5 = "A5";
+    }
+
+    List<Sample> getSamples() {
+        return Sample.find(Sample.class, "test_sequence = ?", getId().toString());
     }
 }

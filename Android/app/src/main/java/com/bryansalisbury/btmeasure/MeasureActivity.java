@@ -31,6 +31,9 @@ public class MeasureActivity extends AppCompatActivity {
 
     private enum RemoteState {NULL, TEST, MAIN, MEASURE, CONTROL, TOGGLE_LED, ECHO};
     private RemoteState mState = RemoteState.NULL;
+
+    private enum ButtonState {START, STOP};
+    private ButtonState mStartButton = ButtonState.START;
     private TestSequence mTestSequence;
 
     // Arduino Control Variables
@@ -81,6 +84,8 @@ public class MeasureActivity extends AppCompatActivity {
                 buttonBeginClick();
             }
         });
+
+
     }
 
     private int getSampleDelay(){
@@ -89,7 +94,7 @@ public class MeasureActivity extends AppCompatActivity {
         return (int) ((1.0 / (float) seekSampleRate.getProgress() + 1) * 1000000);
     }
 
-    private void buttonBeginClick(){
+    private void buttonBeginStart(){
         // UI Elements
         Switch switchA0 = (Switch) findViewById(R.id.switchA0);
         Switch switchA1 = (Switch) findViewById(R.id.switchA1);
@@ -130,9 +135,24 @@ public class MeasureActivity extends AppCompatActivity {
 
         // TODO improve handling of test start
         buttonBegin.setText("Stop");
-        getApplicationContext().registerReceiver(mBroadcastReceiver, makeIntentFilter());
         bluno.connect("D0:39:72:C5:38:6F");
+        bluno.send(mTestSequence.getConfigureString());
+        mStartButton = ButtonState.STOP;
+    }
 
+    private void buttonBeginStop(){
+        Button buttonBegin = (Button) findViewById(R.id.buttonBegin);
+        bluno.send("A");
+        buttonBegin.setText("Start");
+        mStartButton = ButtonState.START;
+    }
+
+    private void buttonBeginClick(){
+        if(mStartButton.equals(ButtonState.START)){
+            buttonBeginStart();
+        }else{
+            buttonBeginStop();
+        }
     }
 
     private RemoteState StateLookup(int code){
@@ -197,6 +217,8 @@ public class MeasureActivity extends AppCompatActivity {
                 Log.v(TAG, message);
                 mSample.save();
             }
+        }else if(mState.equals(RemoteState.NULL)){
+            bluno.send("A");
         }
     }
 
