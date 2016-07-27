@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -136,8 +137,14 @@ public class MeasureActivity extends AppCompatActivity {
         // TODO improve handling of test start
         buttonBegin.setText("Stop");
         bluno.connect("D0:39:72:C5:38:6F");
-        bluno.send(mTestSequence.getConfigureString());
         mStartButton = ButtonState.STOP;
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                bluno.send(mTestSequence.getConfigureString());
+            }
+        }, 1000);
     }
 
     private void buttonBeginStop(){

@@ -1,5 +1,6 @@
 package com.bryansalisbury.btmeasure;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
@@ -10,7 +11,7 @@ import com.bryansalisbury.btmeasure.models.TestSequence;
 import java.util.List;
 
 public class ResultsActivity extends AppCompatActivity {
-    TestSequence mTestSequence;
+    TestSequence mTestSequence = new TestSequence();
     List<Sample> mSamples;
 
 
@@ -19,20 +20,21 @@ public class ResultsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_results);
 
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            Integer mTestSequenceID = extras.getInt("TEST_SEQUENCE_ID");
-            mTestSequence = TestSequence.findById(TestSequence.class, mTestSequenceID);
-            mSamples = Sample.find(Sample.class, "test_sequence = ?", mTestSequenceID.toString());
-            //The key argument here must match that used in the other activity
-        }
-
-        TextView testName = (TextView) findViewById(R.id.tvName);
+        TextView testName = (TextView) findViewById(R.id.tvTestName);
         TextView sampleCount = (TextView) findViewById(R.id.tvSampleCount);
         TextView samples = (TextView) findViewById(R.id.tvSamples);
 
-        testName.setText(mTestSequence.testName);
-        sampleCount.setText("Count: " + mSamples.size());
+        Intent intent = getIntent();
+        Integer mTestSequenceID = intent.getIntExtra("TEST_SEQUENCE_ID", -1);
+        if (mTestSequenceID != -1) {
+            mTestSequence = TestSequence.findById(TestSequence.class, mTestSequenceID);
+            //mSamples = Sample.find(Sample.class, "test_sequence = ?", mTestSequenceID.toString());
+            mSamples = Sample.find(Sample.class, "");
+            //The key argument here must match that used in the other activity
+
+            testName.setText(mTestSequence.testName);
+            sampleCount.setText("Count: " + mSamples.size());
+        }
 
     }
 }

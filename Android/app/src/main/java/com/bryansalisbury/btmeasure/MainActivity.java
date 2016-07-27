@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity
                         " ["+ item.getId() +"]", Toast.LENGTH_SHORT).show();
 
                 Intent intent = new Intent(getBaseContext(), ResultsActivity.class);
-                intent.putExtra("TEST_SEQUENCE_ID", item.getId());
+                intent.putExtra("TEST_SEQUENCE_ID", item.getId().intValue());
                 startActivity(intent);
             }
         });

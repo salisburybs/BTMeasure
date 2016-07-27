@@ -20,7 +20,7 @@ public class TestSequence extends SugarRecord{
     public String labelA5;
 
     public String getConfigureString(){
-        String commandString = "MP";
+        String commandString = "AMP";
 
         if(this.compressed){
             commandString += "C1:";
@@ -49,7 +49,7 @@ public class TestSequence extends SugarRecord{
         this.labelA5 = "A5";
     }
 
-    List<Sample> getSamples() {
+    public List<Sample> getSamples() {
         return Sample.find(Sample.class, "test_sequence = ?", getId().toString());
     }
 }
