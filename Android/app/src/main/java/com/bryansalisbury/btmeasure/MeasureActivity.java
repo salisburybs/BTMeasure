@@ -1,6 +1,5 @@
 package com.bryansalisbury.btmeasure;
 
-import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -17,10 +16,11 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bryansalisbury.btmeasure.bluno.BluetoothLeService;
 import com.bryansalisbury.btmeasure.bluno.Bluno;
 import com.bryansalisbury.btmeasure.models.Sample;
 import com.bryansalisbury.btmeasure.models.TestSequence;
+
+import java.util.ArrayList;
 
 public class MeasureActivity extends AppCompatActivity {
     private Bluno bluno;
@@ -36,6 +36,8 @@ public class MeasureActivity extends AppCompatActivity {
     private enum ButtonState {START, STOP};
     private ButtonState mStartButton = ButtonState.START;
     private TestSequence mTestSequence;
+
+    private ArrayList<Sample> mSampleBuffer = new ArrayList<>();
 
     // Arduino Control Variables
     // TODO move to bluno.java as this is platform specific restriction
@@ -143,6 +145,8 @@ public class MeasureActivity extends AppCompatActivity {
             @Override
             public void run() {
                 bluno.send(mTestSequence.getConfigureString());
+                mTestSequence.startTime = System.nanoTime();
+                mTestSequence.save();
             }
         }, 1000);
     }
@@ -151,6 +155,17 @@ public class MeasureActivity extends AppCompatActivity {
         Button buttonBegin = (Button) findViewById(R.id.buttonBegin);
         bluno.send("A");
         buttonBegin.setText("Start");
+        mTestSequence.finishTime = System.nanoTime();
+        mTestSequence.save();
+        Log.i(TAG, "Samples collected = " + mSampleBuffer.size());
+        if(mSampleBuffer.size() > 0) {
+            for (Sample sample : mSampleBuffer) {
+                sample.save();
+            }
+            mSampleBuffer.clear();
+        }else{
+            mTestSequence.delete();
+        }
         mStartButton = ButtonState.START;
     }
 
@@ -217,12 +232,12 @@ public class MeasureActivity extends AppCompatActivity {
                 if(data.length == 2){
                     Sample mSample = new Sample("A0", ValueUnpacker(data), mTestSequence);
                     Log.v(TAG, Integer.toString(mSample.value));
-                    mSample.save();
+                    mSampleBuffer.add(mSample);
                 }
             }else{
                 Sample mSample = new Sample("A0", Integer.parseInt(message), mTestSequence);
                 Log.v(TAG, message);
-                mSample.save();
+                mSampleBuffer.add(mSample);
             }
         }else if(mState.equals(RemoteState.NULL)){
             bluno.send("A");

@@ -13,14 +13,14 @@ public class Sample extends SugarRecord {
     }
 
     public Sample(String input, int value, TestSequence testSequence){
-        this.timestamp = System.nanoTime();
+        //this.timestamp = System.nanoTime();
         this.testSequence = testSequence;
         this.input = input;
         this.value = value;
     }
 
     public Sample(String input, int value, long timestamp, TestSequence testSequence){
-        this.timestamp = timestamp;
+        //this.timestamp = timestamp;
         this.input = input;
         this.value = value;
     }

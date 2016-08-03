@@ -7,6 +7,9 @@ public class TestSequence extends SugarRecord{
     public String testName;
     public long unixTimestamp;
 
+    public long startTime;
+    public long finishTime;
+
     public int sampleDelay;
     public boolean compressed = true;
     public int measureMask;
@@ -51,5 +54,10 @@ public class TestSequence extends SugarRecord{
 
     public List<Sample> getSamples() {
         return Sample.find(Sample.class, "test_sequence = ?", getId().toString());
+    }
+
+    public Double getSampleRate(){
+        long duration = (this.finishTime - this.startTime);
+        return (getSamples().size() / (duration * 0.000000001));
     }
 }
