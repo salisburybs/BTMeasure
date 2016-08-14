@@ -1,3 +1,5 @@
+#include <RingBuf.h>
+
 // Bryan Salisbury
 
 
@@ -19,9 +21,8 @@ byte stateEntryFlag = 0;
 byte nextState = stateNull;
 
 // Measure State Control Variables
-byte measureMask = B1;               // Measure & Transmit A0
+byte measureMask = 0;               // Measure & Transmit A0
 
-unsigned int  sampleDelay    = 500;  // Sample delay in micros for transmission (2000 Hz = 500 micros)
 unsigned long sampleSentMark = 0;    // Marks the time of the last analog read / transmission
 unsigned long markToggleLED  = 0;    // Marks the time of last LED state change
 unsigned long markTemp       = 0;    // Mark for temp storage of a time
@@ -32,11 +33,45 @@ boolean compressOutput       = 0;    // Binary encode output data
 boolean debug                = 0;    // Send debugging information to serial output
 boolean waitingForInput      = false;
 
+volatile unsigned int preCount = 0; // Set by programming command (120hz)
+
+struct Sample{
+  byte data[2];
+};
+
+RingBuf *buf = RingBuf_new(sizeof(struct Sample), 100);
+
+ISR(TIMER1_OVF_vect)
+{
+  TCNT1=preCount;
+  PORTB = (PORTB & 0xDF) | (!(PORTB&0x20) << 5 ); // Clear LED output OR !LED_ON
+  
+  if(measureMask > 0){
+    byte myMask = measureMask;
+    for(int i=0; i<6; i++){
+      struct Sample s;
+      if(myMask & (1 << i)){ // compares measuremask to see if input is enabled
+        compress(i, s.data);
+        buf->add(buf, &s);
+      }
+      myMask &= (0 << i); // clear the measure bit from mask
+      if(myMask == 0){ // break loop if done reading inputs
+        break;
+      }
+    }
+  }
+}
 
 void setup() {
   // initialize serial communication at 115200 baudrate bits per second
   Serial.begin(115200);
   nextState = stateNull;
+
+  // Configure TIMER1 registers
+  TCCR1A = 0x00;
+  TCCR1B = (1 << CS11) | (1 << CS10); // 64 prescale = 16e6/64 hz = 250000 hz  
+  TCNT1 = preCount;
+  TIMSK1 |= (1 << TOIE0); // Turn on Timer1 overflow interrupt
 }
 
 byte getNextState(byte state) {
@@ -111,6 +146,12 @@ byte getNextState(byte state) {
   return state;
 }
 
+void compress(int inputPin, byte value[]){
+  int sensorValue = analogRead(inputPin);
+  value[0] = sensorValue & 3;
+  value[1] = sensorValue >> 2;
+}
+
 void serialWriteOptimized(int inputPin) {
   if (compressOutput) {
     int sensorValue = analogRead(inputPin);
@@ -132,7 +173,31 @@ void makePortsInputLow() {
   DDRC = 0;          // Configure pins A0-A5 as inputs
 }
 
+void send_buffer(int count){
+  struct Sample s;
+  byte i = 0;
+  
+  while (buf->pull(buf, &s))
+  {
+    Serial.write(s.data[0]);
+    Serial.write(s.data[1]);
+    Serial.write('\n');
+    i++;
+    if((count > 0) && (i > count)){
+      break;
+    }
+  }
+}
+
 void loop() {
+  if(!(buf->isEmpty(buf))){
+    send_buffer(20); 
+  }
+  if(buf->isFull(buf)){
+    noInterrupts();
+    send_buffer(0);
+    interrupts();
+  }
   byte tmpNextState = 0;
   byte index = 0;
   byte currentState = nextState;
@@ -160,65 +225,21 @@ void loop() {
       Controls timing / etc.
       */
       if (stateEntryFlag != stateMeasure) {
-        //makePortsInputLow();
         measureMask = 0;
-        sampleDelay = 0;
         sampleCount = 0;
         sampleMaxCount = 0;
-        waitingForInput = true;
         stateEntryFlag = stateMeasure;
+        //TIMSK1 = TIMSK1 & (0 << TOIE0); // Turn off TIMER 1 overflow event
+        DDRB |= (1 << 5); // PIN13 SET DIRECTION TO OUTPUT
         pinMode(3, OUTPUT);
         analogWrite(3, 128);
         Serial.print("STATE=");
         Serial.print(currentState);
         Serial.write('\n');
       }
-
-      // Measure / send data block
-      if ((measureMask > 0) && !waitingForInput) {
-        if ((micros() - sampleSentMark) > sampleDelay) {
-          // use measureMask to determine inputs to send
-          // odds are this stylistic choice will produce slight offset between measurements.
-          // Modify serialWriteOptimized to take the "measureMask"?
-          sampleSentMark = micros();
-          if (measureMask & B1) {
-            serialWriteOptimized(A0);
-          }
-          if (measureMask & B10) {
-            serialWriteOptimized(A1);
-          }
-          if (measureMask & B100) {
-            serialWriteOptimized(A2);
-          }
-          if (measureMask & B1000) {
-            serialWriteOptimized(A3);
-          }
-          if (measureMask & B10000) {
-            serialWriteOptimized(A4);
-          }
-          if (measureMask & B100000) {
-            serialWriteOptimized(A5);
-          }
-          // Optimized write does not send newline
-          // newline separates samples to reduce effect of time skew
-          sampleCount += 1;
-          if (compressOutput) {
-            Serial.write('\n');
-          }
-          if (debug) {
-            Serial.print("INFO sampleCount=");
-            Serial.print(sampleCount);
-            Serial.write('\n');
-          }
-        }
-      }
+      
       // State change and configuration block
       tmpNextState = getNextState(currentState);
-      if ((sampleMaxCount > 0)&&(sampleCount > sampleMaxCount)){
-        Serial.print("sampleMaxCount");
-        Serial.write('\n');
-        tmpNextState = stateNull;
-      }
       if (tmpNextState == modeProgram) {
         Serial.print(bufferInput);
         Serial.write('\n');
@@ -238,9 +259,10 @@ void loop() {
             case 'D':
               cmd++;
               // set delay value
-              sampleDelay = atoi(cmd);
-              Serial.print("INFO sampleDelay=");
-              Serial.print(sampleDelay);
+              preCount = atoi(cmd);
+              TCNT1 = preCount;
+              Serial.print("INFO preCount=");
+              Serial.print(preCount);
               Serial.write('\n');
               break;
             case 'S':
@@ -248,7 +270,7 @@ void loop() {
               // set mask for outputs
               measureMask = atoi(cmd);
               Serial.print("INFO measureMask=");
-              Serial.print(measureMask);
+              Serial.print(measureMask); //must be != 0 for samples to buffer
               Serial.write('\n');
               break;
             case 'N':
@@ -264,9 +286,7 @@ void loop() {
           delay(100);
         }
         bufferInput[0] = '\0';
-
-        // recognized an attempt at configuring output
-        waitingForInput = false;
+        
       } else {
         nextState = tmpNextState;
         // Break from current state
@@ -316,14 +336,13 @@ void loop() {
         stateEntryFlag = stateToggleLED;
         makePortsInputLow();
         pinMode(13, OUTPUT);
-        sampleDelay = 1000;
         Serial.print(stateToggleLED);
         Serial.write('\n');
       }
 
-      // Toggle LED every period of sampleDelay
+      // Toggle LED every 1000ms
       markTemp = millis(); // Will introduce delay if micros is called twice
-      if ((markTemp - markToggleLED) > sampleDelay) {
+      if ((markTemp - markToggleLED) > 1000) {
         markToggleLED = markTemp;
         if (debug) {
           Serial.print("INFO ");
@@ -333,14 +352,7 @@ void loop() {
         digitalWrite(13, !digitalRead(13));
       }
 
-      tmpNextState = getNextState(currentState);
-      if (tmpNextState == modeProgram) {
-        sampleDelay = atoi(bufferInput);
-        Serial.print(sampleDelay);
-        Serial.write('\n');
-      } else {
-        nextState = tmpNextState;
-      }
+      nextState = getNextState(currentState);
       break;
 
 

@@ -23,16 +23,17 @@ public class TestSequence extends SugarRecord{
     public String labelA5;
 
     public String getConfigureString(){
-        String commandString = "AMP";
+        String commandString = "AMP"; // Abort + Measure + Program
 
         if(this.compressed){
-            commandString += "C1:";
+            commandString += "C1:"; // Compress True
         }else{
-            commandString += "C0:";
+            commandString += "C0:"; // Compress False
         }
 
-        commandString += "D" + this.sampleDelay + ":";
-        commandString += "S" + this.measureMask + ":";
+        //commandString += "D" + this.sampleDelay + ":"; // Delay between measurements
+        commandString += "D63535" + this.sampleDelay + ":"; // Delay between measurements
+        commandString += "S" + this.measureMask + ":"; // Selection mask (inputs)
         return  commandString;
     }
 
@@ -58,6 +59,6 @@ public class TestSequence extends SugarRecord{
 
     public Double getSampleRate(){
         long duration = (this.finishTime - this.startTime);
-        return (getSamples().size() / (duration * 0.000000001));
+        return (this.getSamples().size() / (duration * 0.000000001));
     }
 }

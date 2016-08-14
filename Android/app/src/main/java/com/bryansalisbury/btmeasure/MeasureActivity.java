@@ -256,103 +256,11 @@ public class MeasureActivity extends AppCompatActivity {
         }
     };
 
-
     private static IntentFilter makeIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ACTION_MESSAGE_AVAILABLE);
         return intentFilter;
     }
-    /*
-    public void writeSamplesToFile() {
-        if (isExternalStorageWritable()) {
-            File root = Environment.getExternalStorageDirectory();
-            File dir = new File(root.getAbsolutePath() + "/bluno");
-            dir.mkdirs();
-            File file = new File(dir, "output.csv");
-
-            try {
-                FileOutputStream f = new FileOutputStream(file);
-                PrintWriter pw = new PrintWriter(f);
-                pw.println("Start time:, " + startTime);
-                pw.println("End time:, " + endTime);
-                long duration = (endTime - startTime);
-                pw.println("Duration:, " + duration);
-                pw.println("Sample count:, " + samples.size());
-                pw.println("Error count:, " + errorCount);
-                pw.println("Sample rate:, " + ((float) samples.size() / ((float) duration * 0.000000001)));
-                pw.println("num, value");
-                Integer i = 0;
-                for (Integer sample : samples) {
-                    pw.println(i + "," + sample);
-                    i = i + 1;
-                }
-
-                pw.flush();
-                pw.close();
-                f.close();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                //TAG, "File not found");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));
-
-
-        }
-    }
-
-    public void processBuffer() {
-        // Splits inputBuffer on newline
-        // newline will not be returned, but the last element in the list could be corrupted
-        // depending on how Bluno handles the serial stream
-        // TODO Parse the input buffer for newlines and return fragment of sample to buffer
-        String sample;
-
-        // Data in inputRingBuffer should only contain samples
-        while (inputRingBuffer.size() > 3) {
-            short[] temp = new short[3];
-            // take 3 out of ringBuffer
-            for (int i = 0; i < 3; i++) {
-                temp[i] = inputRingBuffer.pop();
-            }
-
-            // Is the last character the line separator?
-            if (temp[2] == 10) {
-                if (startTime == 0) {
-                    startTime = System.nanoTime();
-                    errorCount = 0;
-                }
-                // TODO This should be a multiple of samples being read ie 4 when input A0 && A1
-                // Sanity Check: Confirms that the separator character is in the expected position
-                // This should allow for the second byte in sample to equal 10
-                //int part1 = (temp[0] & 0x00FF);
-                //int part2 = ((temp[1] & 0x00FF) << 2);
-                int composite = (temp[0] & 0x00FF) | ((temp[1] & 0x00FF) << 2);
-                //System.out.println("Data -->" + composite);
-                //sample = "" + composite;  /// <--- this line may be slow. Should not be using string to store samples
-                samples.add(composite);
-            } else {
-                errorCount += 1;
-                // Try to find separator character
-                // Somewhat arbitrary selection for i max
-                // Should be selected as greater than number of expected bytes per sample
-                for (int i = 0; i <= 3; i++) {
-                    if (!inputRingBuffer.isEmpty()) {
-                        if (inputRingBuffer.pop() == 10) {
-                            // May have found a separator character
-                            // Break loop and test sanity
-                            return;
-                        }
-                    }else{
-                        return;
-                    }
-                }
-            }
-        }
-    }
-    */
 
     @Override
     protected void onPause(){

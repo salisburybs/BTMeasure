@@ -252,4 +252,8 @@ public class Bluno {
             mBluetoothLeService.writeCharacteristic(mSCharacteristic);
         }
     }
+
+    public boolean setGattPriority(boolean high){
+        return mBluetoothLeService.setHighPriority(high);
+    }
 }

@@ -29,6 +29,10 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+    // Test List
+    ArrayList<TestSequence> Tests;
+    TestSequenceAdapter itemsAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,11 +49,11 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        ArrayList<TestSequence> Tests = (ArrayList<TestSequence>) TestSequence.listAll(TestSequence.class);
-        TestSequenceAdapter itemsAdapter =  new TestSequenceAdapter(this, Tests);
-        final ListView lvResults = (ListView) findViewById(R.id.listViewResults);
-        lvResults.setAdapter(itemsAdapter);
+        Tests = (ArrayList<TestSequence>) TestSequence.listAll(TestSequence.class);
+        itemsAdapter =  new TestSequenceAdapter(this, Tests);
+        ListView lvResults = (ListView) findViewById(R.id.listViewResults);
 
+        lvResults.setAdapter(itemsAdapter);
         lvResults.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
@@ -62,6 +66,13 @@ public class MainActivity extends AppCompatActivity
                 startActivity(intent);
             }
         });
+    }
+
+    @Override
+    public void onResume(){
+        Tests = (ArrayList<TestSequence>) TestSequence.listAll(TestSequence.class);
+        itemsAdapter.notifyDataSetChanged();
+        super.onResume();
     }
 
     @Override

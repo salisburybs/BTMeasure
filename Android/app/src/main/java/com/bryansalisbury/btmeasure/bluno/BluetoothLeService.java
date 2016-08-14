@@ -454,5 +454,11 @@ public class BluetoothLeService extends Service {
         return mBluetoothGatt.getServices();
     }
 
-
+    public boolean setHighPriority(boolean enable){
+        if(enable) {
+            return mBluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+        }else{
+            return mBluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
+        }
+    }
 }
