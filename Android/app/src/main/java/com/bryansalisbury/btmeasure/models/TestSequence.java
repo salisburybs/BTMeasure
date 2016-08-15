@@ -10,7 +10,7 @@ public class TestSequence extends SugarRecord{
     public long startTime;
     public long finishTime;
 
-    public int sampleDelay;
+    public int overflowCount;
     public boolean compressed = true;
     public int measureMask;
 
@@ -31,8 +31,8 @@ public class TestSequence extends SugarRecord{
             commandString += "C0:"; // Compress False
         }
 
-        //commandString += "D" + this.sampleDelay + ":"; // Delay between measurements
-        commandString += "D63535" + this.sampleDelay + ":"; // Delay between measurements
+        //commandString += "D" + this.overflowCount + ":"; // Delay between measurements
+        commandString += "D" + this.overflowCount + ":"; // Delay between measurements
         commandString += "S" + this.measureMask + ":"; // Selection mask (inputs)
         return  commandString;
     }

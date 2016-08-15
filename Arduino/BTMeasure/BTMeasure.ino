@@ -1,5 +1,3 @@
-#include <RingBuf.h>
-
 // Bryan Salisbury
 
 
@@ -32,19 +30,19 @@ unsigned long sampleMaxCount = 0;    // Number of samples to send
 boolean compressOutput       = 0;    // Binary encode output data
 boolean debug                = 0;    // Send debugging information to serial output
 boolean waitingForInput      = false;
+boolean ack                  = true; // Set high on ACK signal from Android
 
 volatile unsigned int preCount = 0; // Set by programming command (120hz)
 
-struct Sample{
-  byte data[2];
-};
-
-RingBuf *buf = RingBuf_new(sizeof(struct Sample), 100);
+volatile unsigned int index = 0;
+const int maxBuffer = 600;
+byte msb[maxBuffer];
+byte lsb[maxBuffer];
 
 ISR(TIMER1_OVF_vect)
 {
   TCNT1=preCount;
-  PORTB = (PORTB & 0xDF) | (!(PORTB&0x20) << 5 ); // Clear LED output OR !LED_ON
+  PORTB = (PORTB & 0xDF) | (!(PORTB&0x20) << 5 ); // Clear LED output OR !LED_ON (gives a small status indicator)
   
   if(measureMask > 0){
     byte myMask = measureMask;
@@ -133,6 +131,10 @@ byte getNextState(byte state) {
 
       case 'E':
         return stateEcho;
+        break;
+
+      case 'K':
+        ack = true;
         break;
 
       default:

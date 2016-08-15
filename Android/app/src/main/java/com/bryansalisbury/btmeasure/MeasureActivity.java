@@ -9,9 +9,11 @@ import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -47,39 +49,19 @@ public class MeasureActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Create bluno now to have bt service ready when needed.
-        // TODO use handler to create callback and connect to service on button click
         bluno = new Bluno(this);
 
         setContentView(R.layout.activity_measure);
         final Button buttonBegin = (Button) findViewById(R.id.buttonBegin);
-        final SeekBar seekSampleRate = (SeekBar) findViewById(R.id.seekBar);
-        final TextView textSampleRate = (TextView) findViewById(R.id.textSampleRate);
 
-        seekSampleRate.setMax(sampleRateMax - 1);
-        textSampleRate.setText("Sample Rate: " + seekSampleRate.getProgress() + 1 + " (hz)");
-
-        seekSampleRate.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                                                      @Override
-                                                      public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                                                          int sampleRate = progress + 1;
-                                                          textSampleRate.setText("Sample Rate: " + sampleRate + " (hz)");
-                                                      }
-
-                                                      @Override
-                                                      public void onStartTrackingTouch(SeekBar seekBar) {
-
-                                                      }
-
-                                                      @Override
-                                                      public void onStopTrackingTouch(SeekBar seekBar) {
-                                                          int val = seekBar.getProgress();
-                                                          if (val > 1) {
-                                                              val = (Math.round((val + 1) / 100) * 100) - 1;
-                                                          }
-                                                          seekBar.setProgress(val);
-                                                      }
-                                                  }
-        );
+        Spinner spinner = (Spinner) findViewById(R.id.spinner);
+        // Create an ArrayAdapter using the string array and a default spinner layout
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.interrupt_count_array, android.R.layout.simple_spinner_item);
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // Apply the adapter to the spinner
+        spinner.setAdapter(adapter);
 
         buttonBegin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -91,10 +73,9 @@ public class MeasureActivity extends AppCompatActivity {
 
     }
 
-    private int getSampleDelay(){
-        final SeekBar seekSampleRate = (SeekBar) findViewById(R.id.seekBar);
-        // return delay in microseconds
-        return (int) ((1.0 / (float) seekSampleRate.getProgress() + 1) * 1000000);
+    private int getPrecount(){
+        Spinner spinner = (Spinner) findViewById(R.id.spinner);
+        return getResources().getIntArray(R.array.interrupt_values_array)[spinner.getSelectedItemPosition()] ;
     }
 
     private void buttonBeginStart(){
@@ -106,14 +87,13 @@ public class MeasureActivity extends AppCompatActivity {
         Switch switchA4 = (Switch) findViewById(R.id.switchA4);
         Switch switchA5 = (Switch) findViewById(R.id.switchA5);
         Button buttonBegin = (Button) findViewById(R.id.buttonBegin);
-        CheckBox checkCompress = (CheckBox) findViewById(R.id.checkCompression);
 
         // Create database test sequence
         mTestSequence = new TestSequence("New Collection");
-        mTestSequence.compressed = checkCompress.isChecked();
+        mTestSequence.compressed = true;
 
         // Sample delay calculated from sampleRate(hz) value expected to be in microseconds
-        mTestSequence.sampleDelay = getSampleDelay();
+        mTestSequence.overflowCount = getPrecount();
 
         // measureMask tells the Ardiuno which values to read and send over serial.
         mTestSequence.measureMask = (switchA0.isChecked() ? 1 : 0);
