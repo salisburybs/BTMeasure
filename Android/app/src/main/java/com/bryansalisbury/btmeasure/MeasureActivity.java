@@ -210,6 +210,7 @@ public class MeasureActivity extends AppCompatActivity {
         if(mState.equals(RemoteState.MEASURE)){
             if(mTestSequence.compressed){
                 if(data.length == 2){
+                    bluno.send("S"); // send the ACK command
                     Sample mSample = new Sample("A0", ValueUnpacker(data), mTestSequence);
                     Log.v(TAG, Integer.toString(mSample.value));
                     mSampleBuffer.add(mSample);
