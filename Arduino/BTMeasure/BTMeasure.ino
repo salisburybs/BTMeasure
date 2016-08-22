@@ -12,20 +12,21 @@ const byte stateEcho      = 6;
 const byte modeProgram    = 7;
 
 // global
-byte stateEntryFlag = 0;
+byte stateEntryFlag = -1;
 byte nextState = stateNull; // start state for code execution
-boolean debug  = 0;         // Enable debugging information
+boolean debug  = true;         // Enable debugging information
 volatile unsigned int preCount = 0; // Set by programming command (120hz)
 
 // global timing
-unsigned long markTemp           = 0; // Mark for temp storage of a time
-volatile unsigned long markStart = 0; // Mark for temp storage of a time (ms)
+unsigned long markTemp  = 0; // Mark for temp storage of a time
+unsigned long markStart = 0; // Mark for temp storage of a time (ms)
+unsigned long markStop  = 0; // Mark for temp storage of a time (ms)
 
 // output buffer
-volatile unsigned int index = 0; // used in ISR for buffering stored samples
 const int maxBuffer = 750;
-byte buffer0[maxBuffer];
-byte buffer1[maxBuffer];
+volatile unsigned int index = 0; // used in ISR for buffering stored samples
+volatile byte buffer0[maxBuffer];
+volatile byte buffer1[maxBuffer];
 
 // stateMeasure
 byte measureMask       = 0; // Measure & Transmit Mask
@@ -39,7 +40,7 @@ unsigned int lastIndex = 0; // used to mark last index accessed in stateSendBuf
 boolean ack = false;        // Set high on ACK signal from Android
 byte ackTimeout = 100;      // timeout for transmission resend
 byte errorCount = 0;        // transmission error count
-const byte failCount = 10;  // Abort sending after XX resends
+const byte failCount = 100;  // Abort sending after XX resends
 
 // modeProgram
 const byte maxControlStringLength = 19;
@@ -49,17 +50,19 @@ ISR(TIMER1_OVF_vect)
 {
   TCNT1=preCount;
   
-  PORTB |= (1 << 5); // PIN 13 LED ON
+  //PORTB |= (1 << 5); // PIN 13 LED ON
   if(measureMask > 0){
     byte myMask = measureMask;
 
     // voodoo code: shifts one bit over each iteration to match the bits set in measureMask for each input
-    for(byte i=0; i<6; i++){
+    for(byte i=0; i<5; i++){
       if(myMask & (1 << i)){ // compares measuremask to see if input is enabled
         
         // Check to make sure we will not overflow buffer
         if(index < maxBuffer){
-          compress(i, buffer0[index], buffer1[index]);
+          int sensorValue = analogRead(i);
+          buffer0[index] = sensorValue & 3;
+          buffer1[index] = sensorValue >> 2;
           index++;
         }else{
           break;
@@ -71,23 +74,22 @@ ISR(TIMER1_OVF_vect)
       }
     }
   }
-  PORTB &= (0 << 5); // PIN 13 LED OFF
+  //PORTB &= (0 << 5); // PIN 13 LED OFF
 }
 
 void setup() {
-  // initialize serial communication at 115200 baudrate bits per second
+    // initialize serial communication at 115200 baudrate bits per second
   Serial.begin(115200);
   nextState = stateNull;
 
-  // This forces the compiler to report free memory available at compile
-  for(byte i = 0; i < maxBuffer; i++){
-    buffer0[i]=0;
-    buffer1[i]=0;
+  for(int i = 0; i < maxBuffer-1; i++){
+    buffer0[i] = 0;
+    buffer1[i] = 0;
   }
 }
 
 byte getNextState(byte state) {
-  byte index = 0;
+  byte pindex = 0;
 
   if (Serial.available()) {
 
@@ -115,16 +117,16 @@ byte getNextState(byte state) {
             // maxControlStringLength is defined max length of command string
             // does not include null character
             // mem overflow if index exceed this value.
-            if (index > maxControlStringLength) {
+            if (pindex > maxControlStringLength) {
               break;
             }
-            bufferInput[index] = Serial.read();
-            index++;
+            bufferInput[pindex] = Serial.read();
+            pindex++;
           }
 
           // Add null character to terminate bufferInput
           // index is last empty character or last character in array at this point
-          bufferInput[index] = '\0';
+          bufferInput[pindex] = '\0';
 
           if (debug) {
             Serial.print("INFO ");
@@ -148,10 +150,13 @@ byte getNextState(byte state) {
         break;
 
       case 'S':
-        ack = true;
         return stateSendBuf;
         break;
 
+      case 'K':
+        ack = true;
+        break;
+        
       default:
         Serial.print("ERROR[");
         Serial.print(state);
@@ -161,12 +166,6 @@ byte getNextState(byte state) {
   }
 
   return state;
-}
-
-void compress(int inputPin, byte byte0, byte byte1){
-  int sensorValue = analogRead(inputPin);
-  byte0 = sensorValue & 3;
-  byte1 = sensorValue >> 2;
 }
 
 void makePortsInputLow() {
@@ -187,9 +186,8 @@ void sendSample(byte b0, byte b1){
 
 void loop() {
   byte tmpNextState = 0;
-  byte index = 0;
   byte currentState = nextState;
-
+  
   switch (currentState) {
     case stateNull:
       /*
@@ -197,7 +195,7 @@ void loop() {
       Application waits for input from user.
       */
       if (stateEntryFlag != stateNull) {
-        makePortsInputLow();
+        //makePortsInputLow();
         stateEntryFlag = stateNull;
         Serial.print("STATE=");
         Serial.print(currentState);
@@ -226,6 +224,7 @@ void loop() {
         TCCR1B = (1 << CS11) | (1 << CS10); // 64 prescale = 16e6/64 hz = 250000 hz  
         TIMSK1 |= (1 << TOIE0); // Turn on Timer1 overflow interrupt
         // TCNT1 = preCount; // set precount only once the value has been sent to board
+        index=0;
       }
       
       // State change and configuration block
@@ -281,13 +280,14 @@ void loop() {
       }
       
       // Switch to sending mode
-      if(index >= maxBuffer){
+      if(index >= maxBuffer - 1){
         nextState = stateSendBuf;
       }
       
       if(nextState != currentState){
         // Exit Case
         TIMSK1 &= (0 << TOIE0); // Turn off Timer1 overflow interrupt
+        markStop = millis();
       }
       // end configuration block
       break;
@@ -369,27 +369,28 @@ void loop() {
       }
 
       if(ack){
-        sendSample(buffer0[lastIndex], buffer0[lastIndex]);
+        sendSample(buffer0[lastIndex], buffer1[lastIndex]);
         lastIndex++;
         ack = false;
         markTemp = millis();
       }else{
         if((millis() - markTemp) > ackTimeout){
-          sendSample(buffer0[lastIndex], buffer0[lastIndex]);
+          sendSample(buffer0[lastIndex], buffer1[lastIndex]);
           markTemp = millis();
           errorCount++;
         }
       }
-
-      if(lastIndex >= index){
-        nextState = stateNull;
-      }
-      
-      if(errorCount > failCount){
-        nextState = stateNull;
-      }
       
       nextState = getNextState(currentState);
+      if(lastIndex >= maxBuffer){
+        nextState = stateNull;
+      }
+      
+      if(errorCount >= failCount){
+        nextState = stateNull;
+      }
+      
+      
       if(nextState != currentState){
         // Exit Conditions
         Serial.print("INFO SENT=");

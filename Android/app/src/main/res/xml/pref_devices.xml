@@ -3,8 +3,6 @@
 
     <ListPreference
         android:title="@string/pref_title_mac"
-        android:entries="@array/pref_mac_list_titles"
-        android:entryValues="@array/pref_mac_list_values"
         android:key="device_mac"
         android:negativeButtonText="@null"
         android:positiveButtonText="@null"

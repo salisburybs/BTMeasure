@@ -11,11 +11,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.Switch;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bryansalisbury.btmeasure.bluno.Bluno;
@@ -32,7 +29,7 @@ public class MeasureActivity extends AppCompatActivity {
     public static final String ACTION_MESSAGE_AVAILABLE = "com.bryansalisbury.message.AVAILABLE";
     public static final String EXTRA_VALUE = "com.bryansalisbury.message.EXTRA_VALUE";
 
-    private enum RemoteState {NULL, TEST, MAIN, MEASURE, CONTROL, TOGGLE_LED, ECHO};
+    private enum RemoteState {NULL, TEST, SENDBUF, MEASURE, CONTROL, TOGGLE_LED, ECHO};
     private RemoteState mState = RemoteState.NULL;
 
     private enum ButtonState {START, STOP};
@@ -166,8 +163,8 @@ public class MeasureActivity extends AppCompatActivity {
                 Log.i(TAG, "RemoteState.TEST");
                 return RemoteState.TEST;
             case 2:
-                Log.i(TAG, "RemoteState.MAIN");
-                return RemoteState.MAIN;
+                Log.i(TAG, "RemoteState.SENDBUF");
+                return RemoteState.SENDBUF;
             case 3:
                 Log.i(TAG, "RemoteState.MEASURE");
                 return RemoteState.MEASURE;
@@ -207,21 +204,19 @@ public class MeasureActivity extends AppCompatActivity {
             return; // diagnostic message
         }
 
-        if(mState.equals(RemoteState.MEASURE)){
+        if(mState.equals(RemoteState.MEASURE) || mState.equals(RemoteState.SENDBUF)){
             if(mTestSequence.compressed){
                 if(data.length == 2){
-                    bluno.send("S"); // send the ACK command
                     Sample mSample = new Sample("A0", ValueUnpacker(data), mTestSequence);
                     Log.v(TAG, Integer.toString(mSample.value));
                     mSampleBuffer.add(mSample);
+                    bluno.send("K"); // send the ACK command
                 }
             }else{
                 Sample mSample = new Sample("A0", Integer.parseInt(message), mTestSequence);
                 Log.v(TAG, message);
                 mSampleBuffer.add(mSample);
             }
-        }else if(mState.equals(RemoteState.NULL)){
-            bluno.send("A");
         }
     }
 
