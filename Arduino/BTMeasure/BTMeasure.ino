@@ -155,6 +155,12 @@ byte getNextState(byte state) {
 
       case 'K':
         ack = true;
+        while (Serial.available()) {
+          if(Serial.peek() == 'K'){
+            Serial.read(); // discard duplicated ack command
+          }
+        }
+        Serial.flush(); // waits for outgoing transmission to complete.
         break;
         
       default:
