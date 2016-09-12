@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     // Test List
-    ArrayList<TestSequence> Tests;
+    ArrayList<TestSequence> Tests = new ArrayList<>();
     TestSequenceAdapter itemsAdapter;
 
     @Override
@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        Tests = (ArrayList<TestSequence>) TestSequence.listAll(TestSequence.class);
+        Tests.addAll(TestSequence.listAll(TestSequence.class));
         itemsAdapter =  new TestSequenceAdapter(this, Tests);
         ListView lvResults = (ListView) findViewById(R.id.listViewResults);
 
@@ -70,9 +70,10 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onResume(){
-        Tests = (ArrayList<TestSequence>) TestSequence.listAll(TestSequence.class);
-        itemsAdapter.notifyDataSetChanged();
         super.onResume();
+        Tests.clear();
+        Tests.addAll(TestSequence.listAll(TestSequence.class));
+        itemsAdapter.notifyDataSetChanged();
     }
 
     @Override

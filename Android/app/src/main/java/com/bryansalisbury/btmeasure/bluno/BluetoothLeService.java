@@ -95,7 +95,7 @@ public class BluetoothLeService extends Service {
                 intentAction = ACTION_GATT_CONNECTED;
                 mConnectionState = STATE_CONNECTED;
                 broadcastUpdate(intentAction);
-                Log.i(TAG, "Connected to GATT server.");
+                Log.v(TAG, "Connected to GATT server.");
                 // Attempts to discover services after successful connection.
                 if (mBluetoothGatt.discoverServices()) {
                     Log.i(TAG, "Attempting to start service discovery:");
@@ -130,7 +130,7 @@ public class BluetoothLeService extends Service {
             synchronized (this) {
                 //CharacteristicWrite success
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    System.out.println("onCharacteristicWrite success:" + new String(characteristic.getValue()));
+                    Log.v(TAG, "onCharacteristicWrite success:" + new String(characteristic.getValue()));
                     if (mCharacteristicRingBuffer.isEmpty()) {
                         mIsWritingCharacteristic = false;
                     } else {
@@ -254,7 +254,7 @@ public class BluetoothLeService extends Service {
 
     private void broadcastUpdate(final String action, final BluetoothGattCharacteristic characteristic) {
         final Intent intent = new Intent(action);
-        System.out.println("BluetoothLeService broadcastUpdate");
+        Log.v(TAG, "BluetoothLeService broadcastUpdate");
         // For all other profiles, writes the data formatted in HEX.
 
         final byte[] data = characteristic.getValue();

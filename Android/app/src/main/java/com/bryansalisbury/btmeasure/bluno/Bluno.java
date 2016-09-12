@@ -44,8 +44,8 @@ public class Bluno {
 
     // Public Variables -- Can be accessed on the Bluno object
     connectionStateEnum connectionState = connectionStateEnum.isNull;
-    boolean connected;
-    String mDeviceAddress;
+    boolean connected = false;
+    String mDeviceAddress = "";
     int baudRate;
 
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -229,8 +229,10 @@ public class Bluno {
     }
 
     public void connect(String deviceAddress){
+        mBluetoothLeService.close();
         this.mDeviceAddress = deviceAddress;
         mBluetoothLeService.connect(deviceAddress);
+        while(!connectionState.equals(connectionStateEnum.isConnected)){}
     }
 
     public void pause(){
@@ -252,6 +254,17 @@ public class Bluno {
             mBluetoothLeService.writeCharacteristic(mSCharacteristic);
         }
     }
+
+    public boolean connectedTo(String deviceAddress){
+        try {
+            if (connectionState == connectionStateEnum.isConnected) {
+                return mDeviceAddress.equals(deviceAddress);
+            }
+        } catch (Exception ex){
+            Log.e(TAG, "Error comparing device addresses");
+        }
+        return false;
+    };
 
     public boolean setGattPriority(boolean high){
         return mBluetoothLeService.setHighPriority(high);

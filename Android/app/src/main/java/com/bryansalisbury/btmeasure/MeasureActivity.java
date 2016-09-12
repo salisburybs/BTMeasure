@@ -18,6 +18,7 @@ import android.widget.Toast;
 import com.bryansalisbury.btmeasure.bluno.Bluno;
 import com.bryansalisbury.btmeasure.models.Sample;
 import com.bryansalisbury.btmeasure.models.TestSequence;
+import com.orm.SugarRecord;
 
 import java.util.ArrayList;
 
@@ -114,31 +115,34 @@ public class MeasureActivity extends AppCompatActivity {
         mTestSequence.save();
 
         // TODO improve handling of test start
+
         buttonBegin.setText("Stop");
-        bluno.connect("D0:39:72:C5:38:6F");
         mStartButton = ButtonState.STOP;
-        final Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                bluno.send(mTestSequence.getConfigureString());
-                mTestSequence.startTime = System.nanoTime();
-                mTestSequence.save();
-            }
-        }, 1000);
+
+        if(!bluno.connectedTo("D0:39:72:C5:38:6F")){
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    bluno.connect("D0:39:72:C5:38:6F");
+                    bluno.send(mTestSequence.getConfigureString());
+                    mTestSequence.startTime = System.nanoTime();
+                    mTestSequence.save();
+                }
+            }).start();
+        }else{
+            bluno.send(mTestSequence.getConfigureString());
+            mTestSequence.startTime = System.nanoTime();
+            mTestSequence.save();
+        }
     }
 
     private void buttonBeginStop(){
         Button buttonBegin = (Button) findViewById(R.id.buttonBegin);
         bluno.send("A");
         buttonBegin.setText("Start");
-        mTestSequence.finishTime = System.nanoTime();
-        mTestSequence.save();
         Log.i(TAG, "Samples collected = " + mSampleBuffer.size());
         if(mSampleBuffer.size() > 0) {
-            for (Sample sample : mSampleBuffer) {
-                sample.save();
-            }
+            SugarRecord.saveInTx(mSampleBuffer);
             mSampleBuffer.clear();
         }else{
             mTestSequence.delete();
@@ -157,25 +161,18 @@ public class MeasureActivity extends AppCompatActivity {
     private RemoteState StateLookup(int code){
         switch (code){
             case 0:
-                Log.i(TAG, "RemoteState.NULL");
                 return RemoteState.NULL;
             case 1:
-                Log.i(TAG, "RemoteState.TEST");
                 return RemoteState.TEST;
             case 2:
-                Log.i(TAG, "RemoteState.SENDBUF");
                 return RemoteState.SENDBUF;
             case 3:
-                Log.i(TAG, "RemoteState.MEASURE");
                 return RemoteState.MEASURE;
             case 4:
-                Log.i(TAG, "RemoteState.CONTROL");
                 return RemoteState.CONTROL;
             case 5:
-                Log.i(TAG, "RemoteState.TOGGLE_LED");
                 return RemoteState.TOGGLE_LED;
             case 6:
-                Log.i(TAG, "RemoteState.ECHO");
                 return RemoteState.ECHO;
             default:
                 return RemoteState.NULL;
@@ -194,13 +191,34 @@ public class MeasureActivity extends AppCompatActivity {
         if(message.startsWith("STATE")){
             String[] parts = message.split("=");
             int state = Integer.parseInt(parts[parts.length - 1]);
+            if(mState != StateLookup(state)){
+                if(mState.equals(RemoteState.SENDBUF) || mState.equals(RemoteState.MEASURE)){
+                    if(RemoteState.NULL.equals(StateLookup(state))){
+                        buttonBeginStop();
+                    }
+                }
+            };
             mState = StateLookup(state);
+            Log.i(TAG, mState.name());
             return; // Return on state change. done processing this message
+
         }else if(message.startsWith("ERROR")){
             Log.e(TAG, message);
             return; // not data to save from this message
+
         }else if(message.startsWith("INFO")){
             Log.i(TAG, message);
+            String[] parts = message.substring(5).split("=");
+            if(parts.length == 2){
+                if(parts[0].equals("START")){
+                    mTestSequence.startTime = Integer.parseInt(parts[1]);
+                    mTestSequence.save();
+                }else if(parts[0].equals("STOP")){
+                    mTestSequence.finishTime = Integer.parseInt(parts[1]);
+                    mTestSequence.save();
+                }
+
+            }
             return; // diagnostic message
         }
 
@@ -240,16 +258,16 @@ public class MeasureActivity extends AppCompatActivity {
 
     @Override
     protected void onPause(){
+        super.onPause();
         bluno.pause();
         getApplicationContext().unregisterReceiver(mBroadcastReceiver);
-        super.onPause();
     }
 
     @Override
     protected void onResume(){
+        super.onResume();
         bluno.resume();
         getApplicationContext().registerReceiver(mBroadcastReceiver, makeIntentFilter());
-        super.onResume();
     }
 
 }

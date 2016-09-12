@@ -15,7 +15,7 @@ const byte modeProgram    = 7;
 byte stateEntryFlag = -1;
 byte nextState = stateNull; // start state for code execution
 boolean debug  = true;         // Enable debugging information
-volatile unsigned int preCount = 0; // Set by programming command (120hz)
+volatile unsigned int preCount = 0; // Set by programming command
 
 // global timing
 unsigned long markTemp  = 0; // Mark for temp storage of a time
@@ -40,7 +40,7 @@ unsigned int lastIndex = 0; // used to mark last index accessed in stateSendBuf
 boolean ack = false;        // Set high on ACK signal from Android
 byte ackTimeout = 100;      // timeout for transmission resend
 byte errorCount = 0;        // transmission error count
-const byte failCount = 100;  // Abort sending after XX resends
+const byte failCount = 1000;  // Abort sending after XX resends
 
 // modeProgram
 const byte maxControlStringLength = 19;
@@ -221,7 +221,11 @@ void loop() {
         Serial.print("STATE=");
         Serial.print(currentState);
         Serial.write('\n');
-        
+
+        // Reset timing variables
+        markStart=0;
+        markStop=0;
+
         measureMask = 0;
         DDRB |= (1 << 5); // PIN13 SET DIRECTION TO OUTPUT
               
@@ -231,6 +235,7 @@ void loop() {
         TIMSK1 |= (1 << TOIE0); // Turn on Timer1 overflow interrupt
         // TCNT1 = preCount; // set precount only once the value has been sent to board
         index=0;
+
       }
       
       // State change and configuration block
@@ -381,6 +386,7 @@ void loop() {
         markTemp = millis();
       }else{
         if((millis() - markTemp) > ackTimeout){
+          lastIndex++;
           sendSample(buffer0[lastIndex], buffer1[lastIndex]);
           markTemp = millis();
           errorCount++;
@@ -404,6 +410,12 @@ void loop() {
         Serial.write('\n');
         Serial.print("INFO ERRORCOUNT=");
         Serial.print(errorCount);
+        Serial.write('\n');
+        Serial.print("INFO START=");
+        Serial.print(markStart);
+        Serial.write('\n');
+        Serial.print("INFO STOP=");
+        Serial.print(markStop);
         Serial.write('\n');
         break;
       }

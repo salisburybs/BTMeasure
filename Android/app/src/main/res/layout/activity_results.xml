@@ -40,4 +40,11 @@
         android:id="@+id/tvSampleRate"
         android:layout_below="@+id/tvSampleCount"
         android:layout_alignParentStart="true" />
+
+    <com.github.mikephil.charting.charts.ScatterChart
+        android:id="@+id/chart"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/tvSamples"
+        android:layout_alignParentStart="true" />
 </RelativeLayout>
