@@ -35,8 +35,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import au.com.bytecode.opencsv.CSVWriter;
-
 public class ResultsActivity extends AppCompatActivity {
     private Long mTestSequenceID;
     private ShareActionProvider mShareActionProvider;

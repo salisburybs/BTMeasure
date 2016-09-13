@@ -48,6 +48,7 @@
         <item>1000 Hz</item>
         <item>2000 Hz</item>
         <item>3333 Hz</item>
+        <item>5000 Hz</item>
     </string-array>
 
     <integer-array name="interrupt_values_array">
@@ -60,5 +61,6 @@
         <item>65285</item>
         <item>65410</item>
         <item>65460</item>
+        <item>65485</item>
     </integer-array>
 </resources>
