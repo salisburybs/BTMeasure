@@ -3,7 +3,7 @@ import com.orm.SugarRecord;
 
 public class TestSequence extends SugarRecord {
     public String testName;
-    public long unixTimestamp;
+    public long timestamp;
 
     public long startTime;
     public long finishTime;
@@ -39,7 +39,7 @@ public class TestSequence extends SugarRecord {
 
     public TestSequence(String testName) {
         this.testName = testName;
-        this.unixTimestamp = System.currentTimeMillis() / 1000L;
+        this.timestamp = System.currentTimeMillis();
 
         this.labelA0 = "A0";
         this.labelA1 = "A1";

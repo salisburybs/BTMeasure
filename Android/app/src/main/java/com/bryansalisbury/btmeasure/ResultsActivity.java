@@ -158,7 +158,7 @@ public class ResultsActivity extends AppCompatActivity {
             File root = Environment.getExternalStorageDirectory();
             File dir = new File(root.getAbsolutePath() + "/BTMeasure");
             dir.mkdirs();
-            File file = new File(dir, mTestSequence.unixTimestamp +".csv");
+            File file = new File(dir, mTestSequence.timestamp +".csv");
 
             try {
                 FileOutputStream f = new FileOutputStream(file);

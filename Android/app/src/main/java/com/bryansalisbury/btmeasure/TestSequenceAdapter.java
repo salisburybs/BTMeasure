@@ -9,7 +9,10 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Objects;
 
 public class TestSequenceAdapter extends ArrayAdapter<TestSequence>{
@@ -30,7 +33,10 @@ public class TestSequenceAdapter extends ArrayAdapter<TestSequence>{
         TextView tvTime = (TextView) convertView.findViewById(R.id.tvTime);
         // Populate the data into the template view using the data object
         tvName.setText(test.testName);
-        tvTime.setText(Objects.toString(test.unixTimestamp));
+
+        DateFormat df = DateFormat.getDateTimeInstance();
+
+        tvTime.setText(df.format(new Date(test.timestamp)));
         // Return the completed view to render on screen
         return convertView;
     }
