@@ -4,13 +4,19 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.Preference;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.Toast;
@@ -30,10 +36,10 @@ public class MeasureActivity extends AppCompatActivity {
     public static final String ACTION_MESSAGE_AVAILABLE = "com.bryansalisbury.message.AVAILABLE";
     public static final String EXTRA_VALUE = "com.bryansalisbury.message.EXTRA_VALUE";
 
-    private enum RemoteState {NULL, TEST, SENDBUF, MEASURE, CONTROL, TOGGLE_LED, ECHO};
+    private enum RemoteState {NULL, TEST, SENDBUF, MEASURE, CONTROL, TOGGLE_LED, ECHO}
     private RemoteState mState = RemoteState.NULL;
 
-    private enum ButtonState {START, STOP};
+    private enum ButtonState {START, STOP}
     private ButtonState mStartButton = ButtonState.START;
     private TestSequence mTestSequence;
 
@@ -68,7 +74,90 @@ public class MeasureActivity extends AppCompatActivity {
             }
         });
 
+        final EditText lblA0 = (EditText) findViewById(R.id.etA0);
+        final EditText lblA1 = (EditText) findViewById(R.id.etA1);
+        final EditText lblA2 = (EditText) findViewById(R.id.etA2);
+        final EditText lblA3 = (EditText) findViewById(R.id.etA3);
+        final EditText lblA4 = (EditText) findViewById(R.id.etA4);
+        final EditText lblA5 = (EditText) findViewById(R.id.etA5);
 
+        Switch switchA0 = (Switch) findViewById(R.id.switchA0);
+        switchA0.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked){
+                if(isChecked){
+                    lblA0.setEnabled(true);
+                    lblA0.requestFocus();
+                }else{
+                    lblA0.clearFocus();
+                    lblA0.setEnabled(false);
+                }
+            }
+        });
+
+        Switch switchA1 = (Switch) findViewById(R.id.switchA1);
+        switchA1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked){
+                if(isChecked){
+                    lblA1.setEnabled(true);
+                    lblA1.requestFocus();
+                }else{
+                    lblA1.clearFocus();
+                    lblA1.setEnabled(false);
+                }
+            }
+        });
+
+        Switch switchA2 = (Switch) findViewById(R.id.switchA2);
+        switchA2.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked){
+                if(isChecked){
+                    lblA2.setEnabled(true);
+                    lblA2.requestFocus();
+                }else{
+                    lblA2.clearFocus();
+                    lblA2.setEnabled(false);
+                }
+            }
+        });
+
+        Switch switchA3 = (Switch) findViewById(R.id.switchA3);
+        switchA3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked){
+                if(isChecked){
+                    lblA3.setEnabled(true);
+                    lblA3.requestFocus();
+                }else{
+                    lblA3.clearFocus();
+                    lblA3.setEnabled(false);
+                }
+            }
+        });
+
+        Switch switchA4 = (Switch) findViewById(R.id.switchA4);
+        switchA4.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked){
+                if(isChecked){
+                    lblA4.setEnabled(true);
+                    lblA4.requestFocus();
+                }else{
+                    lblA4.clearFocus();
+                    lblA4.setEnabled(false);
+                }
+            }
+        });
+
+        Switch switchA5 = (Switch) findViewById(R.id.switchA5);
+        switchA5.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked){
+                if(isChecked){
+                    lblA5.setEnabled(true);
+                    lblA5.requestFocus();
+                }else{
+                    lblA5.clearFocus();
+                    lblA5.setEnabled(false);
+                }
+            }
+        });
     }
 
     private int getPrecount(){
@@ -78,6 +167,14 @@ public class MeasureActivity extends AppCompatActivity {
 
     private void buttonBeginStart(){
         // UI Elements
+        final EditText lblA0 = (EditText) findViewById(R.id.etA0);
+        final EditText lblA1 = (EditText) findViewById(R.id.etA1);
+        final EditText lblA2 = (EditText) findViewById(R.id.etA2);
+        final EditText lblA3 = (EditText) findViewById(R.id.etA3);
+        final EditText lblA4 = (EditText) findViewById(R.id.etA4);
+        final EditText lblA5 = (EditText) findViewById(R.id.etA5);
+        final EditText lblTestName = (EditText) findViewById(R.id.etTestName);
+
         Switch switchA0 = (Switch) findViewById(R.id.switchA0);
         Switch switchA1 = (Switch) findViewById(R.id.switchA1);
         Switch switchA2 = (Switch) findViewById(R.id.switchA2);
@@ -87,25 +184,57 @@ public class MeasureActivity extends AppCompatActivity {
         Button buttonBegin = (Button) findViewById(R.id.buttonBegin);
 
         // Create database test sequence
-        mTestSequence = new TestSequence("New Collection");
+        mTestSequence = new TestSequence(lblTestName.getText().toString());
         mTestSequence.compressed = true;
 
         // Sample delay calculated from sampleRate(hz) value expected to be in microseconds
         mTestSequence.overflowCount = getPrecount();
 
         // measureMask tells the Ardiuno which values to read and send over serial.
-        mTestSequence.measureMask = (switchA0.isChecked() ? 1 : 0);
-        mTestSequence.measureMask += (switchA1.isChecked() ? 1 : 0) << 1;
-        mTestSequence.measureMask += (switchA2.isChecked() ? 1 : 0) << 2;
-        mTestSequence.measureMask += (switchA3.isChecked() ? 1 : 0) << 3;
-        mTestSequence.measureMask += (switchA4.isChecked() ? 1 : 0) << 4;
-        mTestSequence.measureMask += (switchA5.isChecked() ? 1 : 0) << 5;
+        if(switchA0.isChecked()) {
+            mTestSequence.measureMask = 1;
+            mTestSequence.labelA0 = lblA0.getText().toString();
+        }
+
+        if(switchA1.isChecked()) {
+            mTestSequence.measureMask += (1 << 1);
+            mTestSequence.labelA1 = lblA1.getText().toString();
+        }
+
+        if(switchA2.isChecked()) {
+            mTestSequence.measureMask += (1 << 2);
+            mTestSequence.labelA2 = lblA2.getText().toString();
+        }
+
+        if(switchA3.isChecked()) {
+            mTestSequence.measureMask += (1 << 3);
+            mTestSequence.labelA3 = lblA3.getText().toString();
+        }
+
+        if(switchA4.isChecked()) {
+            mTestSequence.measureMask += (1 << 4);
+            mTestSequence.labelA4 = lblA4.getText().toString();
+        }
+
+        if(switchA5.isChecked()) {
+            mTestSequence.measureMask += (1 << 5);
+            mTestSequence.labelA5 = lblA5.getText().toString();
+        }
 
         // Fail on no selection indicated
         if (mTestSequence.measureMask <= 0) {
             Toast toast = Toast.makeText(
                     getApplicationContext(),
                     "At least one (1) input must be selected!",
+                    Toast.LENGTH_SHORT);
+            toast.show();
+            return;
+        }
+
+        if (Integer.bitCount(mTestSequence.measureMask) > 1){
+            Toast toast = Toast.makeText(
+                    getApplicationContext(),
+                    "Only one (1) input supported at this time.",
                     Toast.LENGTH_SHORT);
             toast.show();
             return;
@@ -119,11 +248,14 @@ public class MeasureActivity extends AppCompatActivity {
         buttonBegin.setText("Stop");
         mStartButton = ButtonState.STOP;
 
-        if(!bluno.connectedTo("D0:39:72:C5:38:6F")){
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        final String mDevice = prefs.getString("device_mac", "");
+
+        if(!bluno.connectedTo(mDevice)){
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    bluno.connect("D0:39:72:C5:38:6F");
+                    bluno.connect(mDevice);
                     bluno.send(mTestSequence.getConfigureString());
                     mTestSequence.startTime = System.nanoTime();
                     mTestSequence.save();
@@ -188,6 +320,8 @@ public class MeasureActivity extends AppCompatActivity {
     }
 
     private void MessageHandler(byte[] data, String message) {
+        ProgressBar mProgress = (ProgressBar) findViewById(R.id.progressBar);
+
         if(message.startsWith("STATE")){
             String[] parts = message.split("=");
             int state = Integer.parseInt(parts[parts.length - 1]);
@@ -195,9 +329,10 @@ public class MeasureActivity extends AppCompatActivity {
                 if(mState.equals(RemoteState.SENDBUF) || mState.equals(RemoteState.MEASURE)){
                     if(RemoteState.NULL.equals(StateLookup(state))){
                         buttonBeginStop();
+                        mProgress.setProgress(0);
                     }
                 }
-            };
+            }
             mState = StateLookup(state);
             Log.i(TAG, mState.name());
             return; // Return on state change. done processing this message
@@ -236,6 +371,7 @@ public class MeasureActivity extends AppCompatActivity {
                 mSampleBuffer.add(mSample);
             }
         }
+        mProgress.setProgress(mSampleBuffer.size());
     }
 
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {

@@ -9,84 +9,180 @@
     android:stackFromBottom="true"
     android:transcriptMode="alwaysScroll" >
 
-    <LinearLayout
-        android:orientation="vertical"
-        android:layout_width="fill_parent"
+    <RelativeLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="10dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Analog Inputs:"
-            android:id="@+id/textView"/>
+        android:padding="15dp">
 
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="A0"
             android:id="@+id/switchA0"
             android:checked="false"
             android:switchPadding="10dp"
-            android:paddingLeft="18dp" />
+            android:layout_alignBaseline="@+id/etA0"
+            android:layout_alignBottom="@+id/etA0"
+            android:layout_alignEnd="@+id/switchA1" />
 
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="A1"
             android:id="@+id/switchA1"
             android:checked="false"
             android:switchPadding="10dp"
-            android:paddingLeft="18dp" />
+            android:layout_alignBaseline="@+id/etA1"
+            android:layout_alignBottom="@+id/etA1"
+            android:layout_alignParentStart="true" />
 
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="A2"
             android:id="@+id/switchA2"
             android:checked="false"
             android:switchPadding="10dp"
-            android:paddingLeft="18dp" />
+            android:layout_alignBaseline="@+id/etA2"
+            android:layout_alignBottom="@+id/etA2"
+            android:layout_alignParentStart="true" />
 
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="A3"
             android:id="@+id/switchA3"
             android:checked="false"
             android:switchPadding="10dp"
-            android:paddingLeft="18dp" />
+            android:layout_alignBaseline="@+id/etA3"
+            android:layout_alignBottom="@+id/etA3"
+            android:layout_alignParentStart="true" />
 
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="A4"
             android:id="@+id/switchA4"
             android:checked="false"
             android:switchPadding="10dp"
-            android:paddingLeft="18dp" />
+            android:layout_alignBaseline="@+id/etA4"
+            android:layout_alignBottom="@+id/etA4"
+            android:layout_alignParentStart="true" />
 
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="A5"
             android:id="@+id/switchA5"
             android:checked="false"
             android:switchPadding="10dp"
-            android:paddingLeft="18dp" />
+            android:layout_alignBaseline="@+id/etA5"
+            android:layout_alignBottom="@+id/etA5"
+            android:layout_alignParentStart="true" />
 
         <Spinner
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/spinner" />
+            android:id="@+id/spinner"
+            android:layout_below="@+id/etA5"
+            android:layout_alignParentStart="true"
+            style="@style/Widget.AppCompat.Spinner"
+            android:spinnerMode="dialog" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:text="@string/label_A0"
+            android:ems="10"
+            android:id="@+id/etA0"
+            android:layout_below="@+id/etTestName"
+            android:layout_toEndOf="@+id/switchA0"
+            android:enabled="false"
+            android:selectAllOnFocus="true" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:text="@string/label_A1"
+            android:ems="10"
+            android:id="@+id/etA1"
+            android:layout_below="@+id/etA0"
+            android:layout_toEndOf="@+id/switchA1"
+            android:enabled="false"
+            android:selectAllOnFocus="true" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:text="@string/label_A2"
+            android:ems="10"
+            android:id="@+id/etA2"
+            android:layout_below="@+id/etA1"
+            android:layout_toEndOf="@+id/switchA2"
+            android:enabled="false"
+            android:selectAllOnFocus="true" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:text="@string/label_A3"
+            android:ems="10"
+            android:layout_below="@+id/etA2"
+            android:layout_toEndOf="@+id/switchA3"
+            android:id="@+id/etA3"
+            android:enabled="false"
+            android:selectAllOnFocus="true" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:text="@string/label_A4"
+            android:ems="10"
+            android:layout_below="@+id/etA3"
+            android:layout_toEndOf="@+id/switchA4"
+            android:id="@+id/etA4"
+            android:enabled="false"
+            android:selectAllOnFocus="true" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:text="@string/label_A5"
+            android:ems="10"
+            android:layout_below="@+id/etA4"
+            android:layout_toEndOf="@+id/switchA5"
+            android:id="@+id/etA5"
+            android:enabled="false"
+            android:selectAllOnFocus="true" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:text="@string/test_name"
+            android:ems="10"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="true"
+            android:id="@+id/etTestName"
+            android:selectAllOnFocus="true" />
 
         <Button
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="Begin Capture"
             android:id="@+id/buttonBegin"
-            android:layout_marginTop="15dp" />
+            android:layout_below="@+id/spinner"
+            android:layout_alignParentStart="true" />
 
-    </LinearLayout>
+        <ProgressBar
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/progressBar"
+            android:layout_below="@+id/buttonBegin"
+            android:layout_alignParentStart="true"
+            android:max="750" />
+
+    </RelativeLayout>
+
 </ScrollView>

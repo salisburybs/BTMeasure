@@ -41,7 +41,7 @@ public class ResultsActivity extends AppCompatActivity {
 
     private List<Sample> mSamples = null;
     private TestSequence mTestSequence = null;
-    private List<Entry> entries = new ArrayList<Entry>();
+    private List<Entry> entries = new ArrayList<>();
 
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
     private static String[] PERMISSIONS_STORAGE = {
@@ -67,10 +67,7 @@ public class ResultsActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    TextView testName = (TextView) findViewById(R.id.tvTestName);
                     TextView sampleCount = (TextView) findViewById(R.id.tvSampleCount);
-                    TextView sampleRate = (TextView) findViewById(R.id.tvSampleRate);
-                    TextView samples = (TextView) findViewById(R.id.tvSamples);
                     ScatterChart chart = (ScatterChart) findViewById(R.id.chart);
 
                     mShareActionProvider.setShareIntent(createShareIntent());
@@ -79,12 +76,12 @@ public class ResultsActivity extends AppCompatActivity {
                     chart.setData(scatterData);
                     chart.invalidate(); // refresh
 
-                    testName.setText(mTestSequence.testName);
+                    setTitle(mTestSequence.testName);
                     //sampleRate.setText("Sample rate: " + mTestSequence.getSampleRate());
                     sampleCount.setText("Count: " + mSamples.size());
                 }
             });
-        };
+        }
     };
 
 
