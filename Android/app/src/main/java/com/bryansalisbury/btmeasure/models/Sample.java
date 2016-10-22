@@ -24,4 +24,12 @@ public class Sample extends SugarRecord {
         this.input = input;
         this.value = value;
     }
+
+    public double getVolts(){
+        return (this.value / 1023.0) * (5.0);
+    }
+
+    public double getVolts(double aRef){
+        return (this.value / 1023.0) * (aRef);
+    }
 }

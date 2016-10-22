@@ -48,4 +48,8 @@ public class TestSequence extends SugarRecord {
         this.labelA4 = "A4";
         this.labelA5 = "A5";
     }
+
+    public double getTImeDelta(){
+        return (65535-this.overflowCount) / 250000.0;
+    }
 }
