@@ -7,6 +7,10 @@
         app:actionProviderClass="android.support.v7.widget.ShareActionProvider"
         app:showAsAction="ifRoom" />
     <item
+        android:id="@+id/menu_item_details"
+        android:title="@string/action_details"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/menu_item_delete"
         android:title="@string/action_delete"
         android:orderInCategory="100"

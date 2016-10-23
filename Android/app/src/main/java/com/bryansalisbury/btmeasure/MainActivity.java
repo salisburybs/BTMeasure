@@ -49,7 +49,6 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        Tests.addAll(TestSequence.listAll(TestSequence.class));
         itemsAdapter =  new TestSequenceAdapter(this, Tests);
         ListView lvResults = (ListView) findViewById(R.id.listViewResults);
 
@@ -58,8 +57,8 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 TestSequence item = (TestSequence)adapterView.getItemAtPosition(i);
-                Toast.makeText(getBaseContext(),"You selected : " + item.testName +
-                        " ["+ item.getId() +"]", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getBaseContext(),"You selected : " + item.testName +
+                //        " ["+ item.getId() +"]", Toast.LENGTH_SHORT).show();
 
                 Intent intent = new Intent(getBaseContext(), ResultsActivity.class);
                 intent.putExtra("TEST_SEQUENCE_ID", item.getId().intValue());
@@ -72,7 +71,7 @@ public class MainActivity extends AppCompatActivity
     public void onResume(){
         super.onResume();
         Tests.clear();
-        Tests.addAll(TestSequence.listAll(TestSequence.class));
+        Tests.addAll(TestSequence.findWithQuery(TestSequence.class, "SELECT * FROM TEST_SEQUENCE ORDER BY TIMESTAMP DESC"));
         itemsAdapter.notifyDataSetChanged();
     }
 
@@ -102,8 +101,8 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            //Intent intent = new Intent(this, SettingsActivity.class);
-            //startActivityForResult(intent, 0);
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivityForResult(intent, 0);
             return true;
         }
 
@@ -117,9 +116,11 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_measure) {
-
+            Intent intent = new Intent(this, MeasureActivity.class);
+            startActivityForResult(intent, 0);
         } else if (id == R.id.nav_control) {
-
+            Intent intent = new Intent(this, ControlActivity.class);
+            startActivityForResult(intent, 0);
         } else if (id == R.id.nav_settings) {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivityForResult(intent, 0);

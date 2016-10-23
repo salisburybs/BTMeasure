@@ -2,7 +2,9 @@ package com.bryansalisbury.btmeasure;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -25,6 +27,7 @@ import com.bryansalisbury.btmeasure.models.Sample;
 import com.bryansalisbury.btmeasure.models.TestSequence;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.ScatterChart;
+import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -71,7 +74,7 @@ public class ResultsActivity extends AppCompatActivity {
                 snackbar.show();
             }
 
-            int i = 1;
+            int i = 0;
             for (Sample theSample : mSamples) {
                 // turn your data into Entry objects
                 entries.add(new Entry((float) getTimeForSample(i, mTestSequence.getTImeDelta()), (float) theSample.getVolts()));
@@ -87,9 +90,17 @@ public class ResultsActivity extends AppCompatActivity {
                     }
                     ScatterDataSet dataSet = new ScatterDataSet(entries, "Analog Input");
                     ScatterData scatterData = new ScatterData(dataSet);
-                    chart.setData(scatterData);
                     chart.getAxisLeft().setAxisMaxValue((float)5.00);
                     chart.getAxisLeft().setAxisMinValue((float)0.00);
+
+                    Legend l = chart.getLegend();
+                    l.setWordWrapEnabled(true);
+                    l.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
+                    l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
+                    l.setOrientation(Legend.LegendOrientation.HORIZONTAL);
+                    l.setDrawInside(false);
+
+                    chart.setData(scatterData);
                     chart.invalidate(); // refresh
 
                     setTitle(mTestSequence.testName);
@@ -132,10 +143,31 @@ public class ResultsActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.menu_item_delete) {
-            SugarRecord.deleteInTx(mSamples);
-            SugarRecord.delete(mTestSequence);
-            onBackPressed();
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Permanently delete this dataset?")
+                    .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            SugarRecord.deleteInTx(mSamples);
+                            SugarRecord.delete(mTestSequence);
+                            onBackPressed();
+                        }})
+                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+
+                        }
+                    });
+            builder.show();
             return true;
+        }else if(id == R.id.menu_item_details){
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Number of samples: " + mSamples.size())
+                    .setPositiveButton("Close", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            // FIRE ZE MISSILES!
+                        }})
+                    .setTitle("Details");
+            builder.show();
         }
 
         return super.onOptionsItemSelected(item);
