@@ -12,8 +12,8 @@ const byte stateEcho      = 6;
 const byte modeProgram    = 7;
 
 // global
-byte stateEntryFlag = -1;
-byte nextState = stateNull; // start state for code execution
+byte stateEntryFlag = -1;      // start execution in impossible state
+byte nextState = stateNull;    // start state for code execution
 boolean debug  = true;         // Enable debugging information
 volatile unsigned int preCount = 0; // Set by programming command
 
@@ -48,8 +48,9 @@ char bufferInput[maxControlStringLength + 1];
 
 ISR(TIMER1_OVF_vect)
 {
+  int sensorValue = 0;
   TCNT1=preCount;
-  
+ 
   //PORTB |= (1 << 5); // PIN 13 LED ON
   if(measureMask > 0){
     byte myMask = measureMask;
@@ -67,10 +68,6 @@ ISR(TIMER1_OVF_vect)
         }else{
           break;
         }
-      }
-      myMask &= (0 << i); // clears bit i from the measureMask
-      if(myMask == 0){ // break loop when nothing is left to measure
-        break;
       }
     }
   }
@@ -291,7 +288,7 @@ void loop() {
       }
       
       // Switch to sending mode
-      if(index >= maxBuffer - 1){
+      if(index >= maxBuffer){
         nextState = stateSendBuf;
       }
       
