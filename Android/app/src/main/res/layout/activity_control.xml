@@ -10,4 +10,206 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.bryansalisbury.btmeasure.ControlActivity">
 
+    <TextView
+        android:text="Kp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:id="@+id/tvKp" />
+
+    <SeekBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tvKp"
+        android:layout_alignParentStart="true"
+        android:id="@+id/seekKp"
+        android:max="500" />
+
+    <TextView
+        android:text="Ki"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/seekKp"
+        android:layout_alignParentStart="true"
+        android:id="@+id/tvKi" />
+
+    <SeekBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tvKi"
+        android:layout_alignParentStart="true"
+        android:id="@+id/seekKi"
+        android:max="500" />
+
+    <TextView
+        android:text="Kd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/seekKi"
+        android:layout_alignParentStart="true"
+        android:id="@+id/tvKd" />
+
+    <SeekBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tvKd"
+        android:layout_alignParentStart="true"
+        android:id="@+id/seekKd"
+        android:max="500" />
+
+    <TextView
+        android:text="KpValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:id="@+id/tvKpValue" />
+
+    <TextView
+        android:text="KiValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/seekKi"
+        android:layout_alignParentEnd="true"
+        android:id="@+id/tvKiValue" />
+
+    <TextView
+        android:text="KdValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/seekKi"
+        android:layout_alignParentEnd="true"
+        android:id="@+id/tvKdValue" />
+
+    <TextView
+        android:text="Target"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/seekKd"
+        android:layout_alignParentStart="true"
+        android:id="@+id/tvTarget" />
+
+    <TextView
+        android:text="TargetValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/seekKd"
+        android:layout_alignParentEnd="true"
+        android:id="@+id/tvTargetValue" />
+
+    <SeekBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tvTarget"
+        android:layout_alignParentStart="true"
+        android:id="@+id/seekTarget"
+        android:max="1023" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:id="@+id/space2"
+        android:layout_height="10dp"
+        android:layout_below="@+id/btnNeg10"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:text="Input Channel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/space2"
+        android:layout_alignParentStart="true"
+        android:id="@+id/tvInput" />
+
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/spinInput"
+        android:layout_below="@+id/tvInput"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:text="Output Channel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/spinInput"
+        android:layout_alignParentStart="true"
+        android:id="@+id/tvOutput" />
+
+    <Button
+        android:text="-10"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:id="@+id/btnNeg10"
+        android:layout_alignBaseline="@+id/btnNeg1"
+        android:layout_alignBottom="@+id/btnNeg1"
+        android:layout_alignEnd="@+id/tvInput" />
+
+    <Button
+        android:text="-1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/btnNeg1"
+        android:layout_alignBaseline="@+id/btnPos1"
+        android:layout_alignBottom="@+id/btnPos1"
+        android:layout_toEndOf="@+id/btnNeg10" />
+
+    <Button
+        android:text="+1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/btnPos1"
+        android:layout_alignBaseline="@+id/btnPos10"
+        android:layout_alignBottom="@+id/btnPos10"
+        android:layout_toEndOf="@+id/btnNeg1" />
+
+    <TextView
+        android:text="Max Output"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/seekTarget"
+        android:layout_alignParentStart="true"
+        android:id="@+id/tvOutputMax" />
+
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/spinOutput"
+        android:layout_below="@+id/tvOutput"
+        android:layout_alignParentStart="true" />
+
+    <SeekBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tvOutputMax"
+        android:layout_alignParentStart="true"
+        android:id="@+id/seekMaxOutput"
+        android:max="255"
+        android:progress="255" />
+
+    <Button
+        android:text="+10"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/btnPos10"
+        android:layout_below="@+id/seekMaxOutput"
+        android:layout_toEndOf="@+id/btnPos1" />
+
+    <TextView
+        android:text="MaxOutputValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/seekTarget"
+        android:layout_alignParentEnd="true"
+        android:id="@+id/tvMaxOutVal" />
+
+    <Button
+        android:text="Send Configuration"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/spinOutput"
+        android:layout_alignParentStart="true"
+        android:id="@+id/btnSend" />
+
 </RelativeLayout>

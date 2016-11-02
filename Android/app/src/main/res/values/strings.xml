@@ -72,6 +72,40 @@
         <item>65485</item>
     </integer-array>
 
+    <string-array name="inputs_array">
+        <item>A0</item>
+        <item>A1</item>
+        <item>A2</item>
+        <item>A3</item>
+        <item>A4</item>
+        <item>A5</item>
+    </string-array>
+
+    <integer-array name="inputs_values_array">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </integer-array>
+
+    <string-array name="outputs_array">
+        <item>Pin 3</item>
+        <item>Pin 5</item>
+        <item>Pin 9</item>
+        <item>Pin 10</item>
+        <item>Pin 11</item>
+    </string-array>
+
+    <integer-array name="outputs_values_array">
+        <item>3</item>
+        <item>5</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+    </integer-array>
+
     <!-- Strings related to Settings -->
 
     <!-- Example General settings -->

@@ -1,4 +1,4 @@
-// Bryan Salisbury
+ // Bryan Salisbury
 
 
 // State definitions
@@ -32,9 +32,6 @@ volatile byte buffer1[maxBuffer];
 byte measureMask       = 0; // Measure & Transmit Mask
 boolean compressOutput = 1; // Binary encode output data (default)
 
-// stateLED
-unsigned long markToggleLED = 0; // Marks the time of last LED state change
-
 // stateSendBuf
 unsigned int lastIndex = 0; // used to mark last index accessed in stateSendBuf
 boolean ack = false;        // Set high on ACK signal from Android
@@ -46,6 +43,13 @@ const byte failCount = 1000;  // Abort sending after XX resends
 const byte maxControlStringLength = 19;
 char bufferInput[maxControlStringLength + 1];
 
+// modeControl
+double kp,ki,kd, sumError = 0.0;
+int error, output, desiredPosition, tSamp = 0;
+byte minOut, maxOut = 0;
+byte outputPin, inputPin = 0;
+boolean start = false;
+
 ISR(TIMER1_OVF_vect)
 {
   int sensorValue = 0;
@@ -53,11 +57,9 @@ ISR(TIMER1_OVF_vect)
  
   //PORTB |= (1 << 5); // PIN 13 LED ON
   if(measureMask > 0){
-    byte myMask = measureMask;
-
     // voodoo code: shifts one bit over each iteration to match the bits set in measureMask for each input
     for(byte i=0; i<5; i++){
-      if(myMask & (1 << i)){ // compares measuremask to see if input is enabled
+      if(measureMask & (1 << i)){ // compares measuremask to see if input is enabled
         
         // Check to make sure we will not overflow buffer
         if(index < maxBuffer){
@@ -171,6 +173,54 @@ byte getNextState(byte state) {
   return state;
 }
 
+int getPosition(){
+  return analogRead(inputPin);
+}
+
+void doControl(){
+  if(millis() - markTemp >= tSamp){
+    markTemp=millis();
+  }else{
+    return;
+  }
+  error = (desiredPosition - getPosition());  // Define error
+
+  // Calculate I term of output
+  output = (ki * (double)(sumError * (tSamp / 1000.0)));
+
+  // Apply limits to control output
+  if(output > maxOut){
+    output = maxOut;
+  }else if(output < minOut){
+    output = minOut;
+  }  
+
+  // kp gain added to output
+  output += (kp * error);
+
+  // Apply limits to control output
+  if(output > maxOut){
+    output = maxOut;
+  }else if(output < minOut){
+    output = minOut;
+  }
+
+  // sumError when output is not saturated
+  if(abs(output) != maxOut){
+    sumError += error;
+  }
+
+  // Set direction output and make output positive
+  if(output >= 0){
+    //digitalWrite(pinDirection, LOW);
+  }else if(output < 0) {
+    output *= -1; //make output value positive
+    //digitalWrite(pinDirection, HIGH);
+  }
+  
+  analogWrite(outputPin, output);  // Send PWM duty rate to motor actuator
+}
+
 void makePortsInputLow() {
   PORTD = PORTD & B11; // Set outputs 2-7 LOW
   PORTB = 0;           // Set outputs 8-13 LOW
@@ -222,17 +272,15 @@ void loop() {
         // Reset timing variables
         markStart=0;
         markStop=0;
+        preCount=0;
 
         measureMask = 0;
         DDRB |= (1 << 5); // PIN13 SET DIRECTION TO OUTPUT
               
         // Configure TIMER1 registers
         TCCR1A = 0x00;
-        TCCR1B = (1 << CS11) | (1 << CS10); // 64 prescale = 16e6/64 hz = 250000 hz  
-        TIMSK1 |= (1 << TOIE0); // Turn on Timer1 overflow interrupt
-        // TCNT1 = preCount; // set precount only once the value has been sent to board
+        TCCR1B = (1 << CS11) | (1 << CS10); // 64 prescale = 16e6/64 hz = 250000 hz
         index=0;
-
       }
       
       // State change and configuration block
@@ -280,10 +328,11 @@ void loop() {
         nextState = tmpNextState;
       }
 
-      // if index > 0 and test start has not been recorded yet
-      if(index > 0 && !markStart){
-        if(!markStart){
+      // if test not yet started, check to see if required params set and start test
+      if(!markStart){
+        if(preCount != 0 && measureMask != 0){
           markStart = millis();
+          TIMSK1 |= (1 << TOIE0); // Turn on Timer1 overflow interrupt
         }
       }
       
@@ -305,43 +354,103 @@ void loop() {
     case stateControl:
       if (stateEntryFlag != stateControl) {
         makePortsInputLow();
+
+        // stateControl Defaults
+        kp = 0;
+        ki = 0;
+        kd = 0;
+        sumError = 0;
+        error = 0;
+        output = 0;
+        desiredPosition = 0;
+        tSamp = 2;
+        minOut = 0;
+        maxOut = 255;
+        outputPin = 0;
+        inputPin = 9;
+        start = false;
+        
         stateEntryFlag = stateControl;
         Serial.print("STATE=");
         Serial.print(currentState);
         Serial.write('\n');
       }
-
-      nextState = getNextState(currentState);
-      break;
-
-    // L
-    case stateToggleLED:
-      /*
-       * Toggles LED on PIN 13 on interval sample delay
-       */
-      if (stateEntryFlag != stateToggleLED) {
-        stateEntryFlag = stateToggleLED;
-        makePortsInputLow();
-        pinMode(13, OUTPUT);
-        Serial.print(stateToggleLED);
+      
+      if(start){
+        doControl;
+      }
+      
+      // State change and configuration block
+      tmpNextState = getNextState(currentState);
+      if (tmpNextState == modeProgram) {
+        Serial.print(bufferInput);
         Serial.write('\n');
-      }
+        char* cmd = strtok(bufferInput, ":");
+        while (cmd != 0) {
+          switch (cmd[0]) {
+            case 'K':
+              cmd++; // skip first character
+              switch (cmd[1]){
+                case 'P':
+                  cmd++;
+                  kp = atof(cmd);
+                  break;
 
-      // Toggle LED every 1000ms
-      markTemp = millis(); // Will introduce delay if micros is called twice
-      if ((markTemp - markToggleLED) > 1000) {
-        markToggleLED = markTemp;
-        if (debug) {
-          Serial.print("INFO ");
-          Serial.print(!digitalRead(13));
-          Serial.write('\n');
+                case 'I':
+                  cmd++;
+                  ki = atof(cmd);
+                  break;
+
+                case 'D':
+                  cmd++;
+                  kd = atof(cmd);
+                  break;
+              }
+              break;
+              
+            case 'P':
+              cmd++;
+              desiredPosition = atoi(cmd);
+              break;
+              
+            case 'H':
+              cmd++;
+              maxOut = atoi(cmd);
+              break;
+            
+            case 'L':
+              cmd++;
+              minOut = atoi(cmd);
+              break;
+                          
+            case 'O':
+              cmd++;
+              outputPin = atoi(cmd);
+              pinMode(outputPin, OUTPUT);
+              break;
+            
+            case 'I':
+              cmd++;
+              inputPin = atoi(cmd);
+              break;
+
+            case 'S':
+              start = true;
+              break;
+          }
+          cmd = strtok(0, ":");
+          delay(100);
         }
-        digitalWrite(13, !digitalRead(13));
+        bufferInput[0] = '\0';
+        
+      } else {
+        nextState = tmpNextState;
       }
-
-      nextState = getNextState(currentState);
+       
+      if(nextState != currentState){
+        
+      }
       break;
-
 
     /*
      * stateEcho will echo serial input back to output
