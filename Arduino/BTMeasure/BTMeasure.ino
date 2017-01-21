@@ -23,7 +23,7 @@ unsigned long markStart = 0; // Mark for temp storage of a time (ms)
 unsigned long markStop  = 0; // Mark for temp storage of a time (ms)
 
 // output buffer
-const int maxBuffer = 750;
+const int maxBuffer = 450;
 volatile unsigned int index = 0; // used in ISR for buffering stored samples
 volatile byte buffer0[maxBuffer];
 volatile byte buffer1[maxBuffer];
@@ -44,10 +44,10 @@ const byte maxControlStringLength = 19;
 char bufferInput[maxControlStringLength + 1];
 
 // modeControl
-double kp,ki,kd, sumError = 0.0;
-int error, output, desiredPosition, tSamp = 0;
-byte minOut, maxOut = 0;
-byte outputPin, inputPin = 0;
+double kp = 0.0,ki = 0.0,kd = 0.0, sumError = 0.0;
+int error = 0, output = 0, desiredPosition = 0, tSamp = 0;
+byte minOut = 0, maxOut = 0;
+byte outputPin = 0, inputPin = 0;
 boolean start = false;
 
 ISR(TIMER1_OVF_vect)
@@ -93,7 +93,7 @@ byte getNextState(byte state) {
   if (Serial.available()) {
 
     // switch on Serial.read()
-    // saves 8 bytes of SRAM rather than storing in variable
+    
     switch (Serial.read()) {
       case 'A':
         return stateNull;
@@ -110,29 +110,36 @@ byte getNextState(byte state) {
       case 'P':
         // All blocking code
         // Necessary at this time in order to read the entire string into buffer
-        delay(100);
-        if (Serial.available()) {
-          while (Serial.available()) {
-            // maxControlStringLength is defined max length of command string
-            // does not include null character
-            // mem overflow if index exceed this value.
-            if (pindex > maxControlStringLength) {
-              break;
+        pindex = 0;
+        markTemp = millis();
+        while (millis() - markTemp < 500){
+          if (Serial.available()) {
+            while (Serial.available()) {
+              // maxControlStringLength is defined max length of command string
+              // does not include null character
+              // mem overflow if index exceed this value.
+              if (pindex > maxControlStringLength) {
+                break;
+              }
+              bufferInput[pindex] = Serial.read();
+              if(bufferInput[pindex] == '\n'){
+                markTemp = 0;
+                break;
+              }
+              pindex++;
             }
-            bufferInput[pindex] = Serial.read();
-            pindex++;
-          }
-
-          // Add null character to terminate bufferInput
-          // index is last empty character or last character in array at this point
-          bufferInput[pindex] = '\0';
-
-          if (debug) {
-            Serial.print("INFO ");
-            Serial.print(bufferInput);
-            Serial.write('\n');
           }
         }
+        
+        // Add null character to terminate bufferInput
+        // index is last empty character or last character in array at this point
+        bufferInput[pindex] = '\0';
+        
+        if (debug) {
+          Serial.print("INFO ");
+          Serial.print(bufferInput);
+          Serial.write('\n');
+        }        
         return modeProgram;
         break;
 
@@ -167,7 +174,12 @@ byte getNextState(byte state) {
         Serial.print(state);
         Serial.print("]: Command not recognized");
         Serial.write('\n');
+        
+        while(Serial.available()){
+          Serial.write(Serial.read());
+        }
     }
+    
   }
 
   return state;
@@ -378,67 +390,89 @@ void loop() {
       
       if(start){
         doControl;
+        start = false;
       }
       
       // State change and configuration block
       tmpNextState = getNextState(currentState);
       if (tmpNextState == modeProgram) {
-        Serial.print(bufferInput);
-        Serial.write('\n');
-        char* cmd = strtok(bufferInput, ":");
+        //Serial.print("INFO input=");
+        //Serial.print(bufferInput);
+        //Serial.write('\n');
+        char* cmd = strtok(bufferInput, ":P");
         while (cmd != 0) {
           switch (cmd[0]) {
-            case 'K':
-              cmd++; // skip first character
-              switch (cmd[1]){
-                case 'P':
-                  cmd++;
-                  kp = atof(cmd);
-                  break;
+            case 'A': //Kp
+              cmd++;
+              kp = atof(cmd);
+              Serial.print("INFO kp=");
+              Serial.print(kp);
+              Serial.write('\n');
+              break;
 
-                case 'I':
-                  cmd++;
-                  ki = atof(cmd);
-                  break;
+            case 'B': //Ki
+              cmd++;
+              ki = atof(cmd);
+              Serial.print("INFO ki=");
+              Serial.print(ki);
+              Serial.write('\n');
+              break;
 
-                case 'D':
-                  cmd++;
-                  kd = atof(cmd);
-                  break;
-              }
+            case 'C': // Kd
+              cmd++;
+              kd = atof(cmd);
+              Serial.print("INFO kd=");
+              Serial.print(kd);
+              Serial.write('\n');
               break;
               
-            case 'P':
+            case 'D':
               cmd++;
               desiredPosition = atoi(cmd);
+              Serial.print("INFO desiredPosition=");
+              Serial.print(desiredPosition);
+              Serial.write('\n');
               break;
               
             case 'H':
               cmd++;
               maxOut = atoi(cmd);
+              Serial.print("INFO maxOut=");
+              Serial.print(maxOut);
+              Serial.write('\n');
               break;
             
             case 'L':
               cmd++;
               minOut = atoi(cmd);
+              Serial.print("INFO minOut=");
+              Serial.print(minOut);
+              Serial.write('\n');
               break;
                           
             case 'O':
               cmd++;
               outputPin = atoi(cmd);
               pinMode(outputPin, OUTPUT);
+              Serial.print("INFO outputPin=");
+              Serial.print(outputPin);
+              Serial.write('\n');
               break;
             
             case 'I':
               cmd++;
               inputPin = atoi(cmd);
+              Serial.print("INFO inputPin=");
+              Serial.print(inputPin);
+              Serial.write('\n');
               break;
 
             case 'S':
               start = true;
+              Serial.print("INFO start command");
               break;
           }
-          cmd = strtok(0, ":");
+          cmd = strtok(0, ":P");
           delay(100);
         }
         bufferInput[0] = '\0';
@@ -446,7 +480,8 @@ void loop() {
       } else {
         nextState = tmpNextState;
       }
-       
+
+      // Exit Conditions 
       if(nextState != currentState){
         
       }

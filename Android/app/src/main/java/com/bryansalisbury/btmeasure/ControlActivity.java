@@ -1,7 +1,14 @@
 package com.bryansalisbury.btmeasure;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -13,6 +20,7 @@ import com.bryansalisbury.btmeasure.bluno.Bluno;
 
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.concurrent.RunnableFuture;
 
 public class ControlActivity extends AppCompatActivity {
     private Bluno bluno;
@@ -23,6 +31,33 @@ public class ControlActivity extends AppCompatActivity {
 
     private ArrayList<String> outputBuffer = new ArrayList<>();
 
+    public static final String ACTION_MESSAGE_AVAILABLE = "com.bryansalisbury.message.AVAILABLE";
+    public static final String EXTRA_VALUE = "com.bryansalisbury.message.EXTRA_VALUE";
+    private static final String TAG = "ControlActivity";
+
+
+    private static IntentFilter makeIntentFilter() {
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ACTION_MESSAGE_AVAILABLE);
+        return intentFilter;
+    }
+
+    private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(ACTION_MESSAGE_AVAILABLE.equals(intent.getAction())){
+                final byte[] data = intent.getByteArrayExtra(EXTRA_VALUE);
+                if(data != null && data.length > 0) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.v(TAG, new String(data));
+                        }
+                    }).start();
+                }
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +94,7 @@ public class ControlActivity extends AppCompatActivity {
         seekKp.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                double kp = i / 10.0;
+                kp = i / 10.0;
                 tvKp.setText(String.format(Locale.getDefault(), "%1$.1f", kp));
             }
 
@@ -77,7 +112,7 @@ public class ControlActivity extends AppCompatActivity {
         seekKi.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                double ki = i / 10.0;
+                ki = i / 10.0;
                 tvKi.setText(String.format(Locale.getDefault(), "%1$.1f", ki));
             }
 
@@ -95,7 +130,7 @@ public class ControlActivity extends AppCompatActivity {
         seekKd.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                double kd = i / 10.0;
+                kd = i / 10.0;
                 tvKd.setText(String.format(Locale.getDefault(), "%1$.1f", kd));
             }
 
@@ -200,13 +235,47 @@ public class ControlActivity extends AppCompatActivity {
             public void onClick(View view) {
                 inputPin = getResources().getIntArray(R.array.inputs_values_array)[spinInput.getSelectedItemPosition()];
                 outputPin = getResources().getIntArray(R.array.outputs_values_array)[spinOutput.getSelectedItemPosition()];
-
+                outputBuffer.clear();
                 outputBuffer.add("C");
-                outputBuffer.add(String.format(Locale.getDefault(), "PKP%1$.1f:KI%2$.1f:KI%3$.1f", kp, ki, kd));
-                outputBuffer.add("PD" + desiredPosition);
-                outputBuffer.add("PH" + maxOut + ":L" + minOut);
-                outputBuffer.add("PO" + outputPin + ":I" + inputPin);
+                outputBuffer.add(String.format(Locale.getDefault(), "PA%1$.1f\nPB%2$.1f\nPC%3$.1f\n", kp, ki, kd));
+                outputBuffer.add("PD" + desiredPosition + '\n');
+                outputBuffer.add("PH" + maxOut + "\nPL" + minOut + '\n');
+                outputBuffer.add("PO" + outputPin + "\nPI" + inputPin + '\n');
+                outputBuffer.add("PS" + '\n'); // start flag
+
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(view.getContext());
+                final String mDevice = prefs.getString("device_mac", "");
+
+                if(!bluno.connectedTo(mDevice)){
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            bluno.connect(mDevice);
+                            for(String str : outputBuffer) {
+                                bluno.send(str);
+                            }
+                        }
+                    }).start();
+                }else{
+                    for(String str : outputBuffer) {
+                        bluno.send(str);
+                    }
+                }
             }
         });
+    }
+
+    @Override
+    protected void onPause(){
+        bluno.pause();
+        getApplicationContext().unregisterReceiver(mBroadcastReceiver);
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+        bluno.resume();
+        getApplicationContext().registerReceiver(mBroadcastReceiver, makeIntentFilter());
     }
 }
