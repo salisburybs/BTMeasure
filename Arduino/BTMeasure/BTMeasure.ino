@@ -3,12 +3,9 @@
 
 // State definitions
 const byte stateNull      = 0;
-const byte stateTest      = 1;
 const byte stateSendBuf   = 2;
 const byte stateMeasure   = 3;
 const byte stateControl   = 4;
-const byte stateToggleLED = 5;
-const byte stateEcho      = 6;
 const byte modeProgram    = 7;
 
 // global
@@ -19,11 +16,10 @@ volatile unsigned int preCount = 0; // Set by programming command
 
 // global timing
 unsigned long markTemp  = 0; // Mark for temp storage of a time
-unsigned long markStart = 0; // Mark for temp storage of a time (ms)
-unsigned long markStop  = 0; // Mark for temp storage of a time (ms)
+unsigned long markControl  = 0; // Used in controlMode
 
 // output buffer
-const int maxBuffer = 450;
+const int maxBuffer = 700;
 volatile unsigned int index = 0; // used in ISR for buffering stored samples
 volatile byte buffer0[maxBuffer];
 volatile byte buffer1[maxBuffer];
@@ -37,22 +33,23 @@ unsigned int lastIndex = 0; // used to mark last index accessed in stateSendBuf
 boolean ack = false;        // Set high on ACK signal from Android
 byte ackTimeout = 100;      // timeout for transmission resend
 byte errorCount = 0;        // transmission error count
-const byte failCount = 1000;  // Abort sending after XX resends
+const byte failCount = 255;  // Abort sending after XX resends
 
 // modeProgram
 const byte maxControlStringLength = 19;
 char bufferInput[maxControlStringLength + 1];
 
-// modeControl
-double kp = 0.0,ki = 0.0,kd = 0.0, sumError = 0.0;
-int error = 0, output = 0, desiredPosition = 0, tSamp = 0;
-byte minOut = 0, maxOut = 0;
-byte outputPin = 0, inputPin = 0;
+// stateControl
+const byte tSamp = 2;
+double kp = 0.0,ki = 0.0,kd = 0.0;
+int error = 0, output = 0, desiredPosition = 0, sumError = 0, minOut = 0, maxOut = 0;
+byte outputPin = 0, inputPin = 0, directionPin = 0;
 boolean start = false;
+boolean directionPinPositive = LOW;
+byte currentState;
 
 ISR(TIMER1_OVF_vect)
 {
-  int sensorValue = 0;
   TCNT1=preCount;
  
   //PORTB |= (1 << 5); // PIN 13 LED ON
@@ -87,8 +84,15 @@ void setup() {
   }
 }
 
+void printState(){
+  Serial.print("STATE=");
+  Serial.print(currentState);
+  Serial.write('\n');
+}
+
 byte getNextState(byte state) {
   byte pindex = 0;
+  unsigned long markProgram = 0;
 
   if (Serial.available()) {
 
@@ -111,8 +115,8 @@ byte getNextState(byte state) {
         // All blocking code
         // Necessary at this time in order to read the entire string into buffer
         pindex = 0;
-        markTemp = millis();
-        while (millis() - markTemp < 500){
+        markProgram = millis();
+        while (millis() - markProgram < 250){
           if (Serial.available()) {
             while (Serial.available()) {
               // maxControlStringLength is defined max length of command string
@@ -123,11 +127,16 @@ byte getNextState(byte state) {
               }
               bufferInput[pindex] = Serial.read();
               if(bufferInput[pindex] == '\n'){
-                markTemp = 0;
                 break;
               }
               pindex++;
             }
+            if(bufferInput[pindex] == '\n'){
+              break;
+            }
+          }
+          if(bufferInput[pindex] == '\n'){
+            break;
           }
         }
         
@@ -141,18 +150,6 @@ byte getNextState(byte state) {
           Serial.write('\n');
         }        
         return modeProgram;
-        break;
-
-      case 'T':
-        return stateTest;
-        break;
-
-      case 'L':
-        return stateToggleLED;
-        break;
-
-      case 'E':
-        return stateEcho;
         break;
 
       case 'S':
@@ -190,26 +187,24 @@ int getPosition(){
 }
 
 void doControl(){
-  if(millis() - markTemp >= tSamp){
-    markTemp=millis();
-  }else{
-    return;
-  }
+  output = 0;  
   error = (desiredPosition - getPosition());  // Define error
 
-  // Calculate I term of output
-  output = (ki * (double)(sumError * (tSamp / 1000.0)));
-
-  // Apply limits to control output
-  if(output > maxOut){
-    output = maxOut;
-  }else if(output < minOut){
-    output = minOut;
-  }  
-
+  if(ki > 0){
+    // Calculate I term of output
+    output = (ki * (sumError * (tSamp / 1000.0)));
+  
+    // Apply limits to control output
+    if(output > maxOut){
+      output = maxOut;
+    }else if(output < minOut){
+      output = minOut;
+    } 
+  }
+  
   // kp gain added to output
   output += (kp * error);
-
+  
   // Apply limits to control output
   if(output > maxOut){
     output = maxOut;
@@ -217,17 +212,18 @@ void doControl(){
     output = minOut;
   }
 
-  // sumError when output is not saturated
-  if(abs(output) != maxOut){
+  if(ki > 0){
     sumError += error;
+  }else{
+    sumError = 0;
   }
-
+  
   // Set direction output and make output positive
   if(output >= 0){
-    //digitalWrite(pinDirection, LOW);
+    digitalWrite(directionPin, directionPinPositive);
   }else if(output < 0) {
     output *= -1; //make output value positive
-    //digitalWrite(pinDirection, HIGH);
+    digitalWrite(directionPin, !directionPinPositive);
   }
   
   analogWrite(outputPin, output);  // Send PWM duty rate to motor actuator
@@ -251,8 +247,8 @@ void sendSample(byte b0, byte b1){
 
 void loop() {
   byte tmpNextState = 0;
-  byte currentState = nextState;
-  
+
+  currentState = nextState;
   switch (currentState) {
     case stateNull:
       /*
@@ -260,11 +256,10 @@ void loop() {
       Application waits for input from user.
       */
       if (stateEntryFlag != stateNull) {
-        //makePortsInputLow();
+        makePortsInputLow();
+        printState();
         stateEntryFlag = stateNull;
-        Serial.print("STATE=");
-        Serial.print(currentState);
-        Serial.write('\n');
+        
       }
 
       nextState = getNextState(currentState);
@@ -277,13 +272,10 @@ void loop() {
       */
       if (stateEntryFlag != stateMeasure) {
         stateEntryFlag = stateMeasure;
-        Serial.print("STATE=");
-        Serial.print(currentState);
-        Serial.write('\n');
+        printState();
 
         // Reset timing variables
-        markStart=0;
-        markStop=0;
+        start=false;
         preCount=0;
 
         measureMask = 0;
@@ -307,11 +299,9 @@ void loop() {
               cmd++; // skip first character
               // set global compression variable
               compressOutput = atoi(cmd);
-              if (debug) {
-                Serial.print("INFO compression=");
-                Serial.print(compressOutput);
-                Serial.write('\n');
-              }
+              Serial.print("INFO compression=");
+              Serial.print(compressOutput);
+              Serial.write('\n');
               break;
             case 'D':
               cmd++;
@@ -341,9 +331,9 @@ void loop() {
       }
 
       // if test not yet started, check to see if required params set and start test
-      if(!markStart){
+      if(!start){
         if(preCount != 0 && measureMask != 0){
-          markStart = millis();
+          start = true;
           TIMSK1 |= (1 << TOIE0); // Turn on Timer1 overflow interrupt
         }
       }
@@ -356,7 +346,7 @@ void loop() {
       if(nextState != currentState){
         // Exit Case
         TIMSK1 &= (0 << TOIE0); // Turn off Timer1 overflow interrupt
-        markStop = millis();
+        start = false; // probably redundant
       }
       // end configuration block
       break;
@@ -366,7 +356,6 @@ void loop() {
     case stateControl:
       if (stateEntryFlag != stateControl) {
         makePortsInputLow();
-
         // stateControl Defaults
         kp = 0;
         ki = 0;
@@ -375,24 +364,38 @@ void loop() {
         error = 0;
         output = 0;
         desiredPosition = 0;
-        tSamp = 2;
+        //tSamp = 2;
         minOut = 0;
         maxOut = 255;
-        outputPin = 0;
-        inputPin = 9;
+        inputPin = 0;
+        outputPin = 9;
+        directionPin = 13;
+        directionPinPositive = LOW;
         start = false;
+
+        TCCR1A = 0x00;
+        TCCR1B = (1 << CS11) | (1 << CS10); // 64 prescale = 16e6/64 hz = 250000 hz
+        index=0;
         
         stateEntryFlag = stateControl;
-        Serial.print("STATE=");
-        Serial.print(currentState);
-        Serial.write('\n');
+        printState();
       }
       
       if(start){
-        doControl;
-        start = false;
+        if((millis() - markControl) >= tSamp){
+          markControl=millis();
+          doControl();
+        }
+
+        // we can get away with using markTemp here and in modeProgram because neither
+        // is used at the same time and the consequences of screwing up the timing here are minimal
+        if((millis() - markTemp) >= 100){
+          markTemp=millis();
+          Serial.print(getPosition());
+          Serial.write('\n');
+        }
       }
-      
+
       // State change and configuration block
       tmpNextState = getNextState(currentState);
       if (tmpNextState == modeProgram) {
@@ -433,6 +436,14 @@ void loop() {
               Serial.print(desiredPosition);
               Serial.write('\n');
               break;
+
+            case 'E':
+              cmd++;
+              preCount = atoi(cmd);
+              Serial.print("INFO preCount=");
+              Serial.print(preCount);
+              Serial.write('\n');
+              break;
               
             case 'H':
               cmd++;
@@ -452,6 +463,7 @@ void loop() {
                           
             case 'O':
               cmd++;
+              pinMode(outputPin, INPUT); // clear old outputPin
               outputPin = atoi(cmd);
               pinMode(outputPin, OUTPUT);
               Serial.print("INFO outputPin=");
@@ -465,55 +477,45 @@ void loop() {
               Serial.print("INFO inputPin=");
               Serial.print(inputPin);
               Serial.write('\n');
+              
+              measureMask = 1 << inputPin; //set measuremask from desired input pin
               break;
 
             case 'S':
               start = true;
-              Serial.print("INFO start command");
+              Serial.print("INFO start\n");
               break;
           }
           cmd = strtok(0, ":P");
-          delay(100);
+          delay(50);
+          if(start){
+            TIMSK1 |= (1 << TOIE0); // Turn on Timer1 overflow interrupt
+          }
         }
         bufferInput[0] = '\0';
         
       } else {
         nextState = tmpNextState;
+        
+      }
+
+      if(index >= maxBuffer){
+        nextState = stateSendBuf;
+        start = false; // probably redundant
       }
 
       // Exit Conditions 
       if(nextState != currentState){
-        
-      }
-      break;
-
-    /*
-     * stateEcho will echo serial input back to output
-     * limited functionality, since many characters need to be recognized as commands
-     */
-    case stateEcho:
-      if (stateEntryFlag != stateEcho) {
-        stateEntryFlag = stateEcho;
+        TIMSK1 &= (0 << TOIE0); // Turn off Timer1 overflow interrupt
         makePortsInputLow();
-        Serial.print(stateEcho);
-        Serial.write('\n');
-      }
-
-      tmpNextState = getNextState(currentState);
-      if (tmpNextState == modeProgram) {
-        Serial.print(bufferInput);
-        Serial.write('\n');
-      } else {
-        nextState = tmpNextState;
       }
       break;
 
     case stateSendBuf:
       if (stateEntryFlag != currentState) {
         stateEntryFlag = currentState;
-        Serial.print("STATE=");
-        Serial.print(currentState);
-        Serial.write('\n');
+        printState();
+        makePortsInputLow();
         ack = true;
         lastIndex = 0;
         errorCount = 0;
@@ -543,7 +545,6 @@ void loop() {
         nextState = stateNull;
       }
       
-      
       if(nextState != currentState){
         // Exit Conditions
         Serial.print("INFO SENT=");
@@ -552,19 +553,8 @@ void loop() {
         Serial.print("INFO ERRORCOUNT=");
         Serial.print(errorCount);
         Serial.write('\n');
-        Serial.print("INFO START=");
-        Serial.print(markStart);
-        Serial.write('\n');
-        Serial.print("INFO STOP=");
-        Serial.print(markStop);
-        Serial.write('\n');
         break;
       }
       break;
-
-    default:
-      nextState = stateNull;
-      Serial.print("ERROR: Execution not defined!");
-      Serial.write('\n');
   }
 }

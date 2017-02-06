@@ -1,11 +1,15 @@
 package com.bryansalisbury.btmeasure;
 
+import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,10 +21,12 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.bryansalisbury.btmeasure.bluno.Bluno;
+import com.bryansalisbury.btmeasure.models.Sample;
+import com.bryansalisbury.btmeasure.models.TestSequence;
+import com.orm.SugarRecord;
 
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.concurrent.RunnableFuture;
 
 public class ControlActivity extends AppCompatActivity {
     private Bluno bluno;
@@ -28,18 +34,114 @@ public class ControlActivity extends AppCompatActivity {
     private int desiredPosition, outputPin, inputPin;
     private int maxOut = 255;
     private int minOut = 0;
-
+    private TestSequence mTestSequence;
     private ArrayList<String> outputBuffer = new ArrayList<>();
 
     public static final String ACTION_MESSAGE_AVAILABLE = "com.bryansalisbury.message.AVAILABLE";
     public static final String EXTRA_VALUE = "com.bryansalisbury.message.EXTRA_VALUE";
     private static final String TAG = "ControlActivity";
+    private TextView tvSensor;
+
+    String mDevice;
+
+    private enum RemoteState {NULL, SENDBUF, MEASURE, CONTROL}
+    private RemoteState mState = RemoteState.NULL;
+
+    private ArrayList<Sample> mSampleBuffer = new ArrayList<>();
+
+    private SharedPreferences prefs;
 
 
+    private RemoteState StateLookup(int code){
+        switch (code){
+            case 0:
+                return RemoteState.NULL;
+            case 2:
+                return RemoteState.SENDBUF;
+            case 3:
+                return RemoteState.MEASURE;
+            case 4:
+                return RemoteState.CONTROL;
+            default:
+                return RemoteState.NULL;
+        }
+    }
     private static IntentFilter makeIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(ACTION_MESSAGE_AVAILABLE);
         return intentFilter;
+    }
+
+    private int ValueUnpacker(byte[] data){
+        if(data.length == 2){
+            return ((data[0] & 0x00FF) | ((data[1] & 0x00FF) << 2));
+        }
+        return -1;
+    }
+
+    private void saveSamples(){
+        bluno.send("A");
+        if(mSampleBuffer.size() > 0) {
+            mTestSequence.save();
+            SugarRecord.saveInTx(mSampleBuffer);
+            Snackbar snackbar = Snackbar
+                    .make(findViewById(android.R.id.content), "Test complete", Snackbar.LENGTH_SHORT)
+                    .setAction("DISMISS", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+
+                        }
+                    });
+            snackbar.show();
+            mSampleBuffer.clear();
+        }else{
+            mTestSequence.delete();
+        }
+    }
+
+    private void MessageHandler(byte[] data, String message) {
+        if(message.startsWith("STATE")){
+            String[] parts = message.split("=");
+            int state = Integer.parseInt(parts[parts.length - 1]);
+            if(mState != StateLookup(state)) {
+                if(mState.equals(RemoteState.SENDBUF) || mState.equals(RemoteState.CONTROL)){
+                    if(RemoteState.NULL.equals(StateLookup(state))){
+                        saveSamples();
+                        //mProgress.setProgress(0);
+                    }
+                }
+            }
+            mState = StateLookup(state);
+
+        }else if(message.startsWith("ERROR")){
+            Log.e(TAG, message);
+
+        }else if(message.startsWith("INFO")){
+            Log.i(TAG, message);
+            String[] parts = message.substring(5).split("=");
+
+            if(parts.length == 2){
+                //confirm setting values here
+                /*
+                if(parts[0].equals("START")){
+                    mTestSequence.startTime = Integer.parseInt(parts[1]);
+                    mTestSequence.save();
+                }else if(parts[0].equals("STOP")){
+                    mTestSequence.finishTime = Integer.parseInt(parts[1]);
+                    mTestSequence.save();
+                }*/
+
+            }
+
+        }else if(mState.equals(RemoteState.SENDBUF)){
+            if(data.length == 2){
+                Sample mSample = new Sample("A0", ValueUnpacker(data), mTestSequence);
+                Log.v(TAG, Integer.toString(mSample.value));
+                mSampleBuffer.add(mSample);
+                bluno.send("K"); // send the ACK command
+            }
+        }
+
     }
 
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
@@ -48,20 +150,27 @@ public class ControlActivity extends AppCompatActivity {
             if(ACTION_MESSAGE_AVAILABLE.equals(intent.getAction())){
                 final byte[] data = intent.getByteArrayExtra(EXTRA_VALUE);
                 if(data != null && data.length > 0) {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Log.v(TAG, new String(data));
-                        }
-                    }).start();
+                    MessageHandler(data, new String(data));
                 }
             }
         }
     };
 
+    private void sendConfig(){
+        bluno.send("C");
+        bluno.send(String.format(Locale.getDefault(), "PA%1$.1f\nPB%2$.1f\nPC%3$.1f\n", kp, ki, kd));
+        bluno.send("PD" + desiredPosition + '\n');
+        bluno.send("PH" + maxOut + "\nPL" + minOut);
+        bluno.send("PO" + outputPin + "\nPI" + inputPin);
+        bluno.send("PE" + mTestSequence.overflowCount + '\n');
+        bluno.send("PS\n"); // start flag
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mTestSequence = new TestSequence("Control Mode Run");
+
         setContentView(R.layout.activity_control);
 
         //instantiate bluno
@@ -78,6 +187,7 @@ public class ControlActivity extends AppCompatActivity {
         final TextView tvKd = (TextView) findViewById(R.id.tvKdValue);
         final TextView tvTarget = (TextView) findViewById(R.id.tvTargetValue);
         final TextView tvMaxOut = (TextView) findViewById(R.id.tvMaxOutVal);
+        tvSensor = (TextView) findViewById(R.id.tvSensor);
 
         Button btnPos1 = (Button) findViewById(R.id.btnPos1);
         Button btnNeg1 = (Button) findViewById(R.id.btnNeg1);
@@ -105,7 +215,7 @@ public class ControlActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-
+                bluno.send(String.format(Locale.getDefault(), "PA%1$.1f", kp));
             }
         });
 
@@ -123,7 +233,7 @@ public class ControlActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-
+                bluno.send(String.format(Locale.getDefault(), "PB%1$.1f", ki));
             }
         });
 
@@ -150,6 +260,7 @@ public class ControlActivity extends AppCompatActivity {
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 desiredPosition = i;
                 tvTarget.setText(Integer.toString(i));
+                bluno.send("PD" + desiredPosition);
             }
 
             @Override
@@ -202,7 +313,6 @@ public class ControlActivity extends AppCompatActivity {
             }
         });
 
-
         btnPos10.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -210,56 +320,28 @@ public class ControlActivity extends AppCompatActivity {
             }
         });
 
-
-        final Spinner spinInput = (Spinner) findViewById(R.id.spinInput);
-        // Create an ArrayAdapter using the string array and a default spinner layout
-        ArrayAdapter<CharSequence> adapterInput = ArrayAdapter.createFromResource(this,
-                R.array.inputs_array, android.R.layout.simple_spinner_item);
-        // Specify the layout to use when the list of choices appears
-        adapterInput.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        // Apply the adapter to the spinner
-        spinInput.setAdapter(adapterInput);
-
-
-        final Spinner spinOutput = (Spinner) findViewById(R.id.spinOutput);
-        // Create an ArrayAdapter using the string array and a default spinner layout
-        ArrayAdapter<CharSequence> adapterOutput = ArrayAdapter.createFromResource(this,
-                R.array.outputs_array, android.R.layout.simple_spinner_item);
-        // Specify the layout to use when the list of choices appears
-        adapterOutput.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        // Apply the adapter to the spinner
-        spinOutput.setAdapter(adapterOutput);
-
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                inputPin = getResources().getIntArray(R.array.inputs_values_array)[spinInput.getSelectedItemPosition()];
-                outputPin = getResources().getIntArray(R.array.outputs_values_array)[spinOutput.getSelectedItemPosition()];
-                outputBuffer.clear();
-                outputBuffer.add("C");
-                outputBuffer.add(String.format(Locale.getDefault(), "PA%1$.1f\nPB%2$.1f\nPC%3$.1f\n", kp, ki, kd));
-                outputBuffer.add("PD" + desiredPosition + '\n');
-                outputBuffer.add("PH" + maxOut + "\nPL" + minOut + '\n');
-                outputBuffer.add("PO" + outputPin + "\nPI" + inputPin + '\n');
-                outputBuffer.add("PS" + '\n'); // start flag
+                prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(view.getContext());
-                final String mDevice = prefs.getString("device_mac", "");
+                inputPin = Integer.parseInt(prefs.getString("control_input", "0"));
+                outputPin = Integer.parseInt(prefs.getString("control_output", "9"));
+                mTestSequence.overflowCount = Integer.parseInt(prefs.getString("control_precount", "65285"));
+                mDevice = prefs.getString("device_mac", "");
 
-                if(!bluno.connectedTo(mDevice)){
+                if(bluno.connectedTo(mDevice)){
+                    sendConfig();
+                }else {
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
                             bluno.connect(mDevice);
-                            for(String str : outputBuffer) {
-                                bluno.send(str);
-                            }
+
+                            sendConfig();
+
                         }
                     }).start();
-                }else{
-                    for(String str : outputBuffer) {
-                        bluno.send(str);
-                    }
                 }
             }
         });

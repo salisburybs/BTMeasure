@@ -212,4 +212,13 @@
         android:layout_alignParentStart="true"
         android:id="@+id/btnSend" />
 
+    <TextView
+        android:text="Sensor Value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/btnSend"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/tvSensor"
+        android:textAppearance="@android:style/TextAppearance.Material.Large" />
+
 </RelativeLayout>

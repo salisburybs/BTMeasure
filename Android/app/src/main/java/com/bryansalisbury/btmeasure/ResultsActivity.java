@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import static android.support.v4.content.FileProvider.getUriForFile;
 
@@ -61,9 +62,9 @@ public class ResultsActivity extends AppCompatActivity {
                     "select * from Sample where test_sequence = ?",
                     mTestSequenceID.toString());
 
-            if(mSamples.size() != 750){
+            if(mSamples.size() != 700 || mSamples.size() != 750){
                 Snackbar snackbar = Snackbar
-                        .make(findViewById(android.R.id.content), "Unexpected number of samples!", Snackbar.LENGTH_INDEFINITE)
+                        .make(findViewById(android.R.id.content), String.format(Locale.getDefault(), "Unexpected count (%1$d)", mSamples.size()), Snackbar.LENGTH_INDEFINITE)
                         .setAction("DISMISS", new View.OnClickListener() {
                             @Override
                             public void onClick(View view) {

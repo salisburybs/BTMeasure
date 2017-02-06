@@ -22,4 +22,56 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:title="@string/pref_header_control">
+
+        <ListPreference
+            android:defaultValue="0"
+            android:entries="@array/inputs_array"
+            android:entryValues="@array/pref_control_input_values"
+            android:key="control_input"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null"
+            android:title="@string/pref_control_input_title"
+            android:summary="@string/pref_control_input_description" />
+
+        <ListPreference
+            android:defaultValue="9"
+            android:entries="@array/outputs_array"
+            android:entryValues="@array/pref_control_output_values"
+            android:key="control_output"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null"
+            android:title="@string/pref_control_output_title"
+            android:summary="@string/pref_control_output_description" />
+
+        <ListPreference
+            android:defaultValue="65285"
+            android:entries="@array/pref_control_precount"
+            android:entryValues="@array/pref_control_precount_values"
+            android:key="control_precount"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null"
+            android:title="@string/pref_control_precount_title"
+            android:summary="@string/pref_control_precount_description" />
+
+        <ListPreference
+            android:defaultValue="13"
+            android:entries="@array/pref_control_direction_titles"
+            android:entryValues="@array/pref_control_direction_values"
+            android:key="control_direction"
+            android:negativeButtonText="@null"
+            android:positiveButtonText="@null"
+            android:title="@string/pref_control_direction_title"
+            android:summary="@string/pref_control_direction_description" />
+
+
+        <SwitchPreference
+            android:title="Direction Pin Reverse"
+            android:summaryOff="Direction pin ON/HIGH makes controller negative"
+            android:summaryOn="Direction pin OFF/LOW makes controller negative"
+            android:defaultValue="false"
+            android:key="control_direction_reverse"/>
+
+    </PreferenceCategory>
 </PreferenceScreen>
