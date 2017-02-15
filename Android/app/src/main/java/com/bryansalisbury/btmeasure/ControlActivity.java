@@ -1,23 +1,19 @@
 package com.bryansalisbury.btmeasure;
 
-import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.os.Handler;
-import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.bryansalisbury.btmeasure.bluno.Bluno;
@@ -40,7 +36,6 @@ public class ControlActivity extends AppCompatActivity {
     public static final String ACTION_MESSAGE_AVAILABLE = "com.bryansalisbury.message.AVAILABLE";
     public static final String EXTRA_VALUE = "com.bryansalisbury.message.EXTRA_VALUE";
     private static final String TAG = "ControlActivity";
-    private TextView tvSensor;
 
     String mDevice;
 
@@ -50,6 +45,7 @@ public class ControlActivity extends AppCompatActivity {
     private ArrayList<Sample> mSampleBuffer = new ArrayList<>();
 
     private SharedPreferences prefs;
+    private ProgressBar mProgress;
 
 
     private RemoteState StateLookup(int code){
@@ -85,7 +81,7 @@ public class ControlActivity extends AppCompatActivity {
             mTestSequence.save();
             SugarRecord.saveInTx(mSampleBuffer);
             Snackbar snackbar = Snackbar
-                    .make(findViewById(android.R.id.content), "Test complete", Snackbar.LENGTH_SHORT)
+                    .make(findViewById(android.R.id.content), "Test complete", Snackbar.LENGTH_LONG)
                     .setAction("DISMISS", new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
@@ -107,7 +103,7 @@ public class ControlActivity extends AppCompatActivity {
                 if(mState.equals(RemoteState.SENDBUF) || mState.equals(RemoteState.CONTROL)){
                     if(RemoteState.NULL.equals(StateLookup(state))){
                         saveSamples();
-                        //mProgress.setProgress(0);
+                        mProgress.setProgress(0);
                     }
                 }
             }
@@ -139,6 +135,7 @@ public class ControlActivity extends AppCompatActivity {
                 Log.v(TAG, Integer.toString(mSample.value));
                 mSampleBuffer.add(mSample);
                 bluno.send("K"); // send the ACK command
+                mProgress.setProgress(mSampleBuffer.size());
             }
         }
 
@@ -169,7 +166,6 @@ public class ControlActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mTestSequence = new TestSequence("Control Mode Run");
 
         setContentView(R.layout.activity_control);
 
@@ -179,6 +175,8 @@ public class ControlActivity extends AppCompatActivity {
         SeekBar seekKp = (SeekBar) findViewById(R.id.seekKp);
         SeekBar seekKi = (SeekBar) findViewById(R.id.seekKi);
         SeekBar seekKd = (SeekBar) findViewById(R.id.seekKd);
+        mProgress = (ProgressBar) findViewById(R.id.progressBar);
+
         final SeekBar seekTarget = (SeekBar) findViewById(R.id.seekTarget);
         final SeekBar seekMaxOutput = (SeekBar) findViewById(R.id.seekMaxOutput);
 
@@ -187,7 +185,6 @@ public class ControlActivity extends AppCompatActivity {
         final TextView tvKd = (TextView) findViewById(R.id.tvKdValue);
         final TextView tvTarget = (TextView) findViewById(R.id.tvTargetValue);
         final TextView tvMaxOut = (TextView) findViewById(R.id.tvMaxOutVal);
-        tvSensor = (TextView) findViewById(R.id.tvSensor);
 
         Button btnPos1 = (Button) findViewById(R.id.btnPos1);
         Button btnNeg1 = (Button) findViewById(R.id.btnNeg1);
@@ -259,8 +256,7 @@ public class ControlActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 desiredPosition = i;
-                tvTarget.setText(Integer.toString(i));
-                bluno.send("PD" + desiredPosition);
+                tvTarget.setText(String.format(Locale.getDefault(), "%1$.2fv", (5.00/1023.0)*i));
             }
 
             @Override
@@ -323,6 +319,7 @@ public class ControlActivity extends AppCompatActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                mTestSequence = new TestSequence("Control Mode Run");
                 prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
                 inputPin = Integer.parseInt(prefs.getString("control_input", "0"));

@@ -1,19 +1,11 @@
 package com.bryansalisbury.btmeasure;
 
-import android.Manifest;
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.net.Uri;
-import android.os.Environment;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.MenuItemCompat;
-import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -21,16 +13,12 @@ import android.support.v7.widget.ShareActionProvider;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.TextView;
 
 import com.bryansalisbury.btmeasure.models.Sample;
 import com.bryansalisbury.btmeasure.models.TestSequence;
-import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.ScatterChart;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.LineData;
-import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.data.ScatterData;
 import com.github.mikephil.charting.data.ScatterDataSet;
 import com.orm.SugarRecord;
@@ -62,7 +50,7 @@ public class ResultsActivity extends AppCompatActivity {
                     "select * from Sample where test_sequence = ?",
                     mTestSequenceID.toString());
 
-            if(mSamples.size() != 700 || mSamples.size() != 750){
+            if(mSamples.size() != 700 && mSamples.size() != 750){
                 Snackbar snackbar = Snackbar
                         .make(findViewById(android.R.id.content), String.format(Locale.getDefault(), "Unexpected count (%1$d)", mSamples.size()), Snackbar.LENGTH_INDEFINITE)
                         .setAction("DISMISS", new View.OnClickListener() {
@@ -93,6 +81,9 @@ public class ResultsActivity extends AppCompatActivity {
                     ScatterData scatterData = new ScatterData(dataSet);
                     chart.getAxisLeft().setAxisMaxValue((float)5.00);
                     chart.getAxisLeft().setAxisMinValue((float)0.00);
+                    dataSet.setScatterShape(ScatterChart.ScatterShape.CIRCLE);
+                    dataSet.setScatterShapeHoleRadius(0f);
+                    dataSet.setScatterShapeSize(8f);
 
                     Legend l = chart.getLegend();
                     l.setWordWrapEnabled(true);

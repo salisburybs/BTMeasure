@@ -113,29 +113,6 @@
         android:layout_below="@+id/btnNeg10"
         android:layout_alignParentStart="true" />
 
-    <TextView
-        android:text="Input Channel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/space2"
-        android:layout_alignParentStart="true"
-        android:id="@+id/tvInput" />
-
-    <Spinner
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/spinInput"
-        android:layout_below="@+id/tvInput"
-        android:layout_alignParentStart="true" />
-
-    <TextView
-        android:text="Output Channel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/spinInput"
-        android:layout_alignParentStart="true"
-        android:id="@+id/tvOutput" />
-
     <Button
         android:text="-10"
         android:layout_width="wrap_content"
@@ -143,8 +120,7 @@
 
         android:id="@+id/btnNeg10"
         android:layout_alignBaseline="@+id/btnNeg1"
-        android:layout_alignBottom="@+id/btnNeg1"
-        android:layout_alignEnd="@+id/tvInput" />
+        android:layout_alignBottom="@+id/btnNeg1" />
 
     <Button
         android:text="-1"
@@ -172,13 +148,6 @@
         android:layout_alignParentStart="true"
         android:id="@+id/tvOutputMax" />
 
-    <Spinner
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/spinOutput"
-        android:layout_below="@+id/tvOutput"
-        android:layout_alignParentStart="true" />
-
     <SeekBar
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -205,20 +174,20 @@
         android:id="@+id/tvMaxOutVal" />
 
     <Button
-        android:text="Send Configuration"
+        android:text="Start Test"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/spinOutput"
-        android:layout_alignParentStart="true"
-        android:id="@+id/btnSend" />
+        android:id="@+id/btnSend"
+        android:layout_below="@+id/btnNeg10"
+        android:layout_alignParentStart="true" />
 
-    <TextView
-        android:text="Sensor Value"
-        android:layout_width="wrap_content"
+    <ProgressBar
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:id="@+id/progressBar"
+        android:max="700"
         android:layout_below="@+id/btnSend"
-        android:layout_centerHorizontal="true"
-        android:id="@+id/tvSensor"
-        android:textAppearance="@android:style/TextAppearance.Material.Large" />
+        android:layout_alignParentStart="true" />
 
 </RelativeLayout>

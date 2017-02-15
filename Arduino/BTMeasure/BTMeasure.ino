@@ -40,7 +40,7 @@ const byte maxControlStringLength = 19;
 char bufferInput[maxControlStringLength + 1];
 
 // stateControl
-const byte tSamp = 2;
+const byte tSamp = 1000; // microseconds
 double kp = 0.0,ki = 0.0,kd = 0.0;
 int error = 0, output = 0, desiredPosition = 0, sumError = 0, minOut = 0, maxOut = 0;
 byte outputPin = 0, inputPin = 0, directionPin = 0;
@@ -192,7 +192,7 @@ void doControl(){
 
   if(ki > 0){
     // Calculate I term of output
-    output = (ki * (sumError * (tSamp / 1000.0)));
+    output = (ki * (sumError * (tSamp / 1000000)));
   
     // Apply limits to control output
     if(output > maxOut){
@@ -379,11 +379,12 @@ void loop() {
         
         stateEntryFlag = stateControl;
         printState();
+        preCount = 0;
       }
       
       if(start){
-        if((millis() - markControl) >= tSamp){
-          markControl=millis();
+        if((micros() - markControl) >= tSamp){
+          markControl=micros();
           doControl();
         }
 
