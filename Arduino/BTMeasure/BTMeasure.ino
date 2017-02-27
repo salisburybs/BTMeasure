@@ -42,9 +42,10 @@ char bufferInput[maxControlStringLength + 1];
 // stateControl
 const byte tSamp = 1000; // microseconds
 double kp = 0.0,ki = 0.0,kd = 0.0;
+int inputValue = 0, lastInputValue = 0;
 int error = 0, output = 0, desiredPosition = 0, sumError = 0, minOut = 0, maxOut = 0;
 byte outputPin = 0, inputPin = 0, directionPin = 0;
-boolean start = false;
+boolean start = false, feedback=true;
 boolean directionPinPositive = LOW;
 byte currentState;
 
@@ -187,7 +188,8 @@ int getPosition(){
 }
 
 void doControl(){
-  output = 0;  
+  output = 0;
+  inputValue = getPosition();
   error = (desiredPosition - getPosition());  // Define error
 
   if(ki > 0){
@@ -204,6 +206,7 @@ void doControl(){
   
   // kp gain added to output
   output += (kp * error);
+  output -= (kd * (inputValue - lastInputValue));
   
   // Apply limits to control output
   if(output > maxOut){
@@ -217,6 +220,9 @@ void doControl(){
   }else{
     sumError = 0;
   }
+
+  lastInputValue = inputValue;
+
   
   // Set direction output and make output positive
   if(output >= 0){
@@ -372,7 +378,8 @@ void loop() {
         directionPin = 13;
         directionPinPositive = LOW;
         start = false;
-
+        feedback = true;
+        
         TCCR1A = 0x00;
         TCCR1B = (1 << CS11) | (1 << CS10); // 64 prescale = 16e6/64 hz = 250000 hz
         index=0;
@@ -383,9 +390,13 @@ void loop() {
       }
       
       if(start){
-        if((micros() - markControl) >= tSamp){
-          markControl=micros();
-          doControl();
+        if(feedback){
+          if((micros() - markControl) >= tSamp){
+            markControl=micros();
+            doControl();
+          }
+        }else{
+          analogWrite(outputPin, desiredPosition >> 2); //shift 2 bits right. 8bits for control
         }
 
         // we can get away with using markTemp here and in modeProgram because neither
@@ -445,7 +456,15 @@ void loop() {
               Serial.print(preCount);
               Serial.write('\n');
               break;
-              
+
+            case 'F':
+              cmd++;
+              feedback = atoi(cmd);
+              Serial.print("INFO feedback=");
+              Serial.print(feedback);
+              Serial.write('\n');
+              break;
+            
             case 'H':
               cmd++;
               maxOut = atoi(cmd);
@@ -464,9 +483,7 @@ void loop() {
                           
             case 'O':
               cmd++;
-              pinMode(outputPin, INPUT); // clear old outputPin
               outputPin = atoi(cmd);
-              pinMode(outputPin, OUTPUT);
               Serial.print("INFO outputPin=");
               Serial.print(outputPin);
               Serial.write('\n');
@@ -478,12 +495,23 @@ void loop() {
               Serial.print("INFO inputPin=");
               Serial.print(inputPin);
               Serial.write('\n');
-              
-              measureMask = 1 << inputPin; //set measuremask from desired input pin
+              break;
+
+            case 'M':
+              cmd++;
+              measureMask = atoi(cmd);
+              if(measureMask){
+                index=0;
+                measureMask = 1 << inputPin; //set measuremask from desired input pin
+              }
+              Serial.print("INFO inputPin=");
+              Serial.print(inputPin);
+              Serial.write('\n');
               break;
 
             case 'S':
               start = true;
+              pinMode(outputPin, OUTPUT);
               Serial.print("INFO start\n");
               break;
           }

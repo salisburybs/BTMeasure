@@ -173,4 +173,10 @@
         <item>65460</item>
         <item>65485</item>
     </string-array>
+
+    <string name="closed_loop">Feedback ON</string>
+    <string name="open_loop">Feedback OFF</string>
+
+    <string name="testmode_steady">Measure Off</string>
+    <string name="testmode_record">Measure On</string>
 </resources>

@@ -174,7 +174,7 @@
         android:id="@+id/tvMaxOutVal" />
 
     <Button
-        android:text="Start Test"
+        android:text="Send Config"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/btnSend"
@@ -189,5 +189,37 @@
         android:max="700"
         android:layout_below="@+id/btnSend"
         android:layout_alignParentStart="true" />
+
+    <ToggleButton
+        android:text="ToggleButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/toggleFeedback"
+        android:textOn="@string/closed_loop"
+        android:textOff="@string/open_loop"
+        android:checked="true"
+        android:layout_below="@+id/progressBar"
+        android:layout_toEndOf="@+id/btnNeg1" />
+
+    <ToggleButton
+        android:text="ToggleButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/toggleTestmode"
+        android:layout_below="@+id/progressBar"
+        android:layout_toStartOf="@+id/toggleFeedback"
+        android:checked="true"
+        android:textOff="@string/testmode_steady"
+        android:textOn="@string/testmode_record" />
+
+    <TextView
+        android:text="Sensor Value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/toggleFeedback"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/textSensor"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:visibility="invisible" />
 
 </RelativeLayout>

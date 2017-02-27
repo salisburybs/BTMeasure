@@ -12,9 +12,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import com.bryansalisbury.btmeasure.bluno.Bluno;
 import com.bryansalisbury.btmeasure.models.Sample;
@@ -46,6 +48,9 @@ public class ControlActivity extends AppCompatActivity {
 
     private SharedPreferences prefs;
     private ProgressBar mProgress;
+    private TextView tvSensorValue;
+    private boolean feedback = true;
+    private boolean measure = true;
 
 
     private RemoteState StateLookup(int code){
@@ -137,6 +142,13 @@ public class ControlActivity extends AppCompatActivity {
                 bluno.send("K"); // send the ACK command
                 mProgress.setProgress(mSampleBuffer.size());
             }
+        }else{
+            tvSensorValue.setVisibility(View.VISIBLE);
+            try{
+                tvSensorValue.setText(String.format(Locale.getDefault(), "%1$.2fv", (5.00/1023.0)*(Integer.valueOf(message))));
+            }catch (Exception ex){
+
+            }
         }
 
     }
@@ -155,11 +167,23 @@ public class ControlActivity extends AppCompatActivity {
 
     private void sendConfig(){
         bluno.send("C");
-        bluno.send(String.format(Locale.getDefault(), "PA%1$.1f\nPB%2$.1f\nPC%3$.1f\n", kp, ki, kd));
-        bluno.send("PD" + desiredPosition + '\n');
-        bluno.send("PH" + maxOut + "\nPL" + minOut);
-        bluno.send("PO" + outputPin + "\nPI" + inputPin);
-        bluno.send("PE" + mTestSequence.overflowCount + '\n');
+
+        if(feedback) {
+            bluno.send(String.format(Locale.getDefault(), "PA%1$.1f\nPB%2$.1f\nPC%3$.1f\n", kp, ki, kd));
+            bluno.send("PF1\n");
+        }else{
+            bluno.send("PF0\n");
+        }
+
+        if(measure){
+            bluno.send("PM1\n");
+        }else{
+            bluno.send("PM0\n");
+        }
+        bluno.send("PD" + desiredPosition + "\n");
+        bluno.send("PH" + maxOut + "\nPL" + minOut + "\n");
+        bluno.send("PO" + outputPin + "\nPI" + inputPin + "\n");
+        bluno.send("PE" + mTestSequence.overflowCount + "\n");
         bluno.send("PS\n"); // start flag
     }
 
@@ -172,9 +196,9 @@ public class ControlActivity extends AppCompatActivity {
         //instantiate bluno
         bluno = new Bluno(this);
 
-        SeekBar seekKp = (SeekBar) findViewById(R.id.seekKp);
-        SeekBar seekKi = (SeekBar) findViewById(R.id.seekKi);
-        SeekBar seekKd = (SeekBar) findViewById(R.id.seekKd);
+        final SeekBar seekKp = (SeekBar) findViewById(R.id.seekKp);
+        final SeekBar seekKi = (SeekBar) findViewById(R.id.seekKi);
+        final SeekBar seekKd = (SeekBar) findViewById(R.id.seekKd);
         mProgress = (ProgressBar) findViewById(R.id.progressBar);
 
         final SeekBar seekTarget = (SeekBar) findViewById(R.id.seekTarget);
@@ -191,6 +215,11 @@ public class ControlActivity extends AppCompatActivity {
         Button btnPos10 = (Button) findViewById(R.id.btnPos10);
         Button btnNeg10 = (Button) findViewById(R.id.btnNeg10);
         Button btnSend = (Button) findViewById(R.id.btnSend);
+
+        ToggleButton btnFeedback = (ToggleButton) findViewById(R.id.toggleFeedback);
+        ToggleButton btnTestmode = (ToggleButton) findViewById(R.id.toggleTestmode);
+        tvSensorValue = (TextView) findViewById(R.id.textSensor);
+
 
         tvKp.setText(Integer.toString(seekKp.getProgress()));
         tvKi.setText(Integer.toString(seekKi.getProgress()));
@@ -212,7 +241,6 @@ public class ControlActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                bluno.send(String.format(Locale.getDefault(), "PA%1$.1f", kp));
             }
         });
 
@@ -230,7 +258,6 @@ public class ControlActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                bluno.send(String.format(Locale.getDefault(), "PB%1$.1f", ki));
             }
         });
 
@@ -319,6 +346,13 @@ public class ControlActivity extends AppCompatActivity {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if(mSampleBuffer.size() > 0){
+                    mSampleBuffer.clear();
+                    mProgress.setProgress(0);
+                    bluno.send("A");
+                    return;
+                }
+
                 mTestSequence = new TestSequence("Control Mode Run");
                 prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
@@ -340,6 +374,33 @@ public class ControlActivity extends AppCompatActivity {
                         }
                     }).start();
                 }
+            }
+        });
+
+        btnFeedback.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked){
+                if(!isChecked){
+                    seekKp.setProgress(0);
+                    seekKd.setProgress(0);
+                    seekKi.setProgress(0);
+                    seekKp.setEnabled(false);
+                    seekKd.setEnabled(false);
+                    seekKi.setEnabled(false);
+                    feedback = false;
+                }else{
+                    seekKp.setEnabled(true);
+                    seekKd.setEnabled(true);
+                    seekKi.setEnabled(true);
+                    feedback = true;
+                }
+            }
+        });
+
+        btnTestmode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked){
+                measure = isChecked;
             }
         });
     }
